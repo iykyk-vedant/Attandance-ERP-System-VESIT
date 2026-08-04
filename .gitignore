@@ -1,0 +1,21 @@
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs & caches
+dist/
+build/
+.next/
+.cache/
+*.log
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
