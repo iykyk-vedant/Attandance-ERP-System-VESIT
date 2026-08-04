@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run Predictor Core Tests
-        run: node --test packages/predictor-core/test.js
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run Sync Idempotency Tests
-        run: node apps/api/test/sync.test.js
+      - name: Run Monorepo Test Suite
+        run: npm test

@@ -6,10 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "test": "node --test packages/predictor-core/test.js && node --test apps/api/test/sync.test.js && node --test apps/api/test/milestones.test.js",
-    "test:predictor": "node --test packages/predictor-core/test.js",
-    "test:sync": "node --test apps/api/test/sync.test.js",
-    "test:milestones": "node --test apps/api/test/milestones.test.js"
+    "test": "npx tsx --test packages/predictor-core/test.js && npx tsx --test apps/api/test/sync.test.js && npx tsx --test apps/api/test/milestones.test.js",
+    "test:predictor": "npx tsx --test packages/predictor-core/test.js",
+    "test:sync": "npx tsx --test apps/api/test/sync.test.js",
+    "test:milestones": "npx tsx --test apps/api/test/milestones.test.js"
   },
   "workspaces": [
     "apps/*",
@@ -22,6 +22,7 @@
     "pg": "^8.22.0"
   },
   "devDependencies": {
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "tsx": "^4.23.5"
   }
 }
