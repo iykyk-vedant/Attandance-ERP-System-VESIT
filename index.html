@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenAttend — Live Companion Platform for VESIT Attendance</title>
+  <meta name="description" content="Live read-only companion platform for VESIT attendance. Google Sheets sync, attendance predictor, and defaulter tracking.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root[data-theme="light"] {
+      --bg-base:        #FAFAF8;
+      --bg-surface:     #FFFFFF;
+      --bg-surface-2:   #F2F1EC;
+      --border-subtle:  #E7E5DE;
+      --border-strong:  #D3D0C6;
+      --text-primary:   #1C1B18;
+      --text-secondary: #6B6A62;
+      --text-tertiary:  #A3A199;
+      --accent:         #2F6F5E;
+      --accent-dim:     #E4EFEB;
+      --state-safe:     #2F9E6E;
+      --state-risk:     #D64545;
+      --state-warn:     #C98A1E;
+      --state-neutral:  #8B897F;
+      --shadow-sm:      0 2px 8px rgba(28, 27, 24, 0.04);
+      --shadow-md:      0 4px 16px rgba(28, 27, 24, 0.08);
+    }
+
+    :root[data-theme="dark"] {
+      --bg-base:        #14161A;
+      --bg-surface:     #1B1E23;
+      --bg-surface-2:   #22262C;
+      --border-subtle:  #2B3038;
+      --border-strong:  #3A424C;
+      --text-primary:   #ECEBE6;
+      --text-secondary: #9B9A92;
+      --text-tertiary:  #6B6A62;
+      --accent:         #5FBFA6;
+      --accent-dim:     #1E2E29;
+      --state-safe:     #4ADE94;
+      --state-risk:     #F27272;
+      --state-warn:     #E0AA46;
+      --state-neutral:  #6E7178;
+      --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 14px;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* App Layout */
+    .app-shell {
+      display: flex;
+      width: 100vw;
+      min-height: 100vh;
+    }
+
+    /* Left Sidebar */
+    aside.sidebar {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1rem;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 50;
+      transition: width 0.2s ease;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0.5rem 1.5rem 0.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+    }
+
+    .nav-section {
+      margin-top: 1.25rem;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-tertiary);
+      padding: 0 0.5rem 0.5rem 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-surface-2);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .role-switcher {
+      display: flex;
+      background: var(--bg-surface-2);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 0.75rem;
+    }
+
+    .role-btn {
+      flex: 1;
+      padding: 0.4rem 0.5rem;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .role-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Main Area */
+    main.main-content {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Top Bar */
+    header.topbar {
+      height: 60px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .page-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    /* SyncPulse Indicator */
+    .sync-pulse-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--bg-surface-2);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--state-safe);
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .theme-toggle-btn {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* View Container */
+    .content-viewport {
+      padding: 2rem;
+      max-width: 1140px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* Signature Components */
+    /* 1. Percentage Ring Hero */
+    .hero-ring-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ring-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .ring-center-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+    }
+
+    .ring-center-val {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    .ring-center-lbl {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .hero-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .student-info-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .student-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .badge-chip {
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--bg-surface-2);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .stats-kpi-grid {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .kpi-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-num {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 2. Predictor Callout */
+    .predictor-callout-card {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .predictor-sentence {
+      font-size: 1.1rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .predictor-num {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .predictor-formula-toggle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-top: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: underline;
+    }
+
+    .predictor-formula-panel {
+      margin-top: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 3. RollCallRow Component */
+    .roll-call-stack {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .roll-call-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.15s ease;
+    }
+
+    .roll-call-row:last-child {
+      border-bottom: none;
+    }
+
+    .roll-call-row:hover {
+      background: var(--bg-surface-2);
+    }
+
+    .rc-date {
+      width: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .rc-subject {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .rc-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 110px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot-safe { background: var(--state-safe); }
+    .dot-risk { background: var(--state-risk); }
+    .dot-warn { background: var(--state-warn); }
+    .dot-neutral { background: var(--state-neutral); }
+
+    .rc-detail {
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+
+    /* Subject Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .subject-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+    }
+
+    .subject-card.risk-border {
+      border-left: 3px solid var(--state-risk);
+    }
+
+    .subject-card.safe-border {
+      border-left: 3px solid var(--state-safe);
+    }
+
+    .sc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .sc-code {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .sc-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .sc-pct {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .sc-progress-bar {
+      height: 6px;
+      background: var(--bg-surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .sc-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .sc-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Forms & Admin Component Styles */
+    .form-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .form-input, .form-select {
+      background: var(--bg-base);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-subtle);
+    }
+
+    .btn-danger {
+      background: var(--state-risk);
+      color: #FFFFFF;
+    }
+
+    /* Live Column Role Mapping Preview Table */
+    .column-preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .column-preview-table th {
+      background: var(--bg-surface-2);
+      padding: 0.75rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .column-preview-table td {
+      padding: 0.75rem;
+      border: 1px solid var(--border-subtle);
+      font-size: 13px;
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tab-chip {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Tab navigation sub-bar */
+    .sub-tabs {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+    }
+
+    .sub-tab-btn {
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .sub-tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      aside.sidebar { width: 100%; height: 60px; top: auto; bottom: 0; border-right: none; border-top: 1px solid var(--border-subtle); flex-direction: row; padding: 0 1rem; }
+      main.main-content { margin-left: 0; margin-bottom: 60px; }
+      .brand-header, .nav-section-title, .sidebar-footer { display: none; }
+      .nav-section { display: flex; width: 100%; justify-content: space-around; margin: 0; }
+      .hero-ring-card { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon">✓</div>
+        <span class="brand-title">OpenAttend</span>
+      </div>
+
+      <!-- Student Navigation Group -->
+      <div class="nav-section" id="student-nav-group">
+        <div class="nav-section-title">STUDENT</div>
+        <div class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> Dashboard</div>
+        <div class="nav-item" onclick="switchView('analytics', this)"><span>📈</span> Analytics</div>
+        <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
+        <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
+        <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+      </div>
+
+      <!-- Admin Navigation Group (Shown in Admin Mode) -->
+      <div class="nav-section" id="admin-nav-group" style="display: none;">
+        <div class="nav-section-title">SETUP</div>
+        <div class="nav-item" onclick="switchView('admin-sheet', this)"><span>🔗</span> Sheet Connection</div>
+        <div class="nav-item" onclick="switchView('admin-mapping', this)"><span>🗺️</span> Worksheet Mapping</div>
+        <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Roster Import</div>
+        <div class="nav-section-title" style="margin-top: 1rem;">OPERATIONS</div>
+        <div class="nav-item" onclick="switchView('admin-sync', this)"><span>🔄</span> Sync Control</div>
+        <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Sync Logs</div>
+      </div>
+
+      <!-- Sidebar Footer with Role Switcher -->
+      <div class="sidebar-footer">
+        <div class="role-switcher">
+          <button class="role-btn active" id="btn-role-student" onclick="toggleRole('STUDENT')">Student View</button>
+          <button class="role-btn" id="btn-role-admin" onclick="toggleRole('ADMIN')">Admin View</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Bar -->
+      <header class="topbar">
+        <h1 class="page-title" id="view-title">Student Dashboard</h1>
+        <div class="topbar-right">
+          <div class="sync-pulse-bar">
+            <div class="pulse-dot"></div>
+            <span id="sync-pulse-text">Synced 4m ago • Google Sheets API</span>
+          </div>
+          <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
+        </div>
+      </header>
+
+      <!-- View Container -->
+      <div class="content-viewport" id="viewport">
+        
+        <!-- View 1: Student Dashboard -->
+        <div class="view-pane" id="pane-dashboard">
+          
+          <!-- Hero Card: Percentage Ring -->
+          <div class="hero-ring-card">
+            <div class="ring-wrapper">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-surface-2)" stroke-width="10" />
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--state-safe)" stroke-width="10" stroke-dasharray="377" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 70 70)" />
+              </svg>
+              <div class="ring-center-text">
+                <div class="ring-center-val font-mono">82.4%</div>
+                <div class="ring-center-lbl">Overall</div>
+              </div>
+            </div>
+            <div class="hero-metrics">
+              <div class="student-info-row">
+                <span class="student-name">Vedant Sharma</span>
+                <span class="badge-chip">Roll: 2024CS01</span>
+              </div>
+              <div class="stats-kpi-grid">
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono" style="color: var(--state-safe)">141</span>
+                  <span class="kpi-label">Present</span>
+                </div>
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono" style="color: var(--state-risk)">30</span>
+                  <span class="kpi-label">Absent</span>
+                </div>
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono">171</span>
+                  <span class="kpi-label">Total Conducted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predictor Callout Component -->
+          <div class="predictor-callout-card">
+            <div class="predictor-sentence">
+              You can safely miss <span class="predictor-num font-mono">16</span> consecutive lectures overall while maintaining attendance above the mandatory <strong>75%</strong> threshold.
+            </div>
+            <div class="predictor-formula-toggle" onclick="toggleFormula('formula-dash')">
+              ▶ How is this calculated?
+            </div>
+            <div class="predictor-formula-panel" id="formula-dash" style="display: none;">
+              <code>Safe Skips S = floor((Present - threshold * Total) / threshold)</code><br>
+              Plugging in: floor((141 - 0.75 * 171) / 0.75) = floor((141 - 128.25) / 0.75) = <strong>16 lectures</strong>.
+            </div>
+          </div>
+
+          <!-- Subject Cards Grid -->
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Subject Wise Breakdown</h2>
+          <div class="cards-grid">
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS401</div>
+                  <div class="sc-title">Data Structures & Algorithms</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">85.7%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 85.7%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 42 Lectures</span>
+                <span>Safe Skips: 6</span>
+              </div>
+            </div>
+
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS402</div>
+                  <div class="sc-title">Operating Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">81.8%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 81.8%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 44 Lectures</span>
+                <span>Safe Skips: 4</span>
+              </div>
+            </div>
+
+            <div class="subject-card risk-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS403</div>
+                  <div class="sc-title">Database Management Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-risk)">72.5%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 72.5%; background: var(--state-risk)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>29 / 40 Lectures</span>
+                <span style="color: var(--state-risk); font-weight: 600">Must attend: 2</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Atomic RollCallRow Stack -->
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Recent Roll Call Log</h2>
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Dr. Rao</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS402 • Operating Systems</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Prof. Patil</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 01, 2026</div>
+              <div class="rc-subject">CS403 • Database Systems</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Absent</span></div>
+              <div class="rc-detail">Faculty: Dr. Sharma</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: Analytics -->
+        <div class="view-pane" id="pane-analytics" style="display: none;">
+          <div class="form-panel">
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Attendance Performance Trends</h3>
+            <p style="color: var(--text-secondary)">Weekly aggregation vs 75% required threshold.</p>
+            <div style="height: 200px; background: var(--bg-surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-family: 'IBM Plex Mono', monospace;">
+              [ Recharts Trend Line: 78% ➔ 80% ➔ 82.4% ]
+            </div>
+          </div>
+        </div>
+
+        <!-- View 3: Predictor -->
+        <div class="view-pane" id="pane-predictor" style="display: none;">
+          <div class="predictor-callout-card" style="padding: 2rem;">
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;">Attendance Eligibility Calculator</h2>
+            <div class="predictor-sentence" style="font-size: 1.25rem;">
+              You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem;">16</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- View 4: History -->
+        <div class="view-pane" id="pane-history" style="display: none;">
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Lecture 1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 5: Notifications -->
+        <div class="view-pane" id="pane-notifications" style="display: none;">
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 01, 2026</div>
+              <div class="rc-subject">Threshold Warning</div>
+              <div class="rc-status"><div class="status-dot dot-warn"></div><span>Warning</span></div>
+              <div class="rc-detail">CS403 dropped below 75% threshold</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 1: Sheet Connection Form -->
+        <div class="view-pane" id="pane-admin-sheet" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Connect Google Sheet</h2>
+            <p style="color: var(--text-secondary);">Configure the read-only Google Sheet ID and service account permissions (PRD §2.8).</p>
+            
+            <div class="form-group">
+              <label class="form-label">Google Sheet ID</label>
+              <input type="text" class="form-input font-mono" value="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms" placeholder="Enter Spreadsheet ID">
+              <span class="form-hint">Found in your Google Sheet URL: /spreadsheets/d/<strong>[SHEET_ID]</strong>/edit</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Service Account Email (Read-Only)</label>
+              <input type="text" class="form-input font-mono" value="sync@openattend.iam.gserviceaccount.com" readonly style="opacity: 0.7;">
+              <span class="form-hint">Share your spreadsheet with Viewer access to this email address.</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="testConnection()">⚡ Test Connection</button>
+
+            <div id="connection-status-panel" style="margin-top: 1rem; display: none;">
+              <div style="background: rgba(47, 158, 110, 0.12); border: 1px solid var(--state-safe); color: var(--state-safe); padding: 1rem; border-radius: 8px;">
+                <strong>✅ Sheet Connection Verified!</strong>
+                <p style="font-size: 12px; margin-top: 4px; color: var(--text-primary);">Spreadsheet Title: "VESIT Attendance 2026"</p>
+                <div style="margin-top: 0.75rem; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Detected Worksheet Tabs:</div>
+                <div class="chips-row">
+                  <span class="tab-chip">Student List</span>
+                  <span class="tab-chip">CS401</span>
+                  <span class="tab-chip">CS402</span>
+                  <span class="tab-chip">CS403</span>
+                  <span class="tab-chip">Defaulters</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 2: Worksheet Mapping Form with Live Preview -->
+        <div class="view-pane" id="pane-admin-mapping" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Worksheet Mapping Setup</h2>
+            <p style="color: var(--text-secondary);">Assign column roles with a live row preview before saving (PRD §11.2).</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Subject Code</label>
+                <select class="form-select">
+                  <option>CS401 — Data Structures</option>
+                  <option>CS402 — Operating Systems</option>
+                  <option>CS403 — Database Systems</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Worksheet Tab</label>
+                <select class="form-select">
+                  <option>CS401</option>
+                  <option>CS402</option>
+                  <option>CS403</option>
+                </select>
+              </div>
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Live Column Role Preview</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">Match each column in the spreadsheet to its entity role:</p>
+
+            <table class="column-preview-table">
+              <thead>
+                <tr>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Date (Col A)</option>
+                      <option>Role: Roll No</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option selected>Role: Roll No (Col B)</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option>Role: Roll No</option>
+                      <option selected>Role: Status (Col C)</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Faculty (Col D)</option>
+                    </select>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS01</td>
+                  <td>Present</td>
+                  <td>Dr. Rao</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS02</td>
+                  <td>Absent</td>
+                  <td>Dr. Rao</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <button class="btn btn-primary" style="margin-top: 1rem; align-self: flex-start;">💾 Save Worksheet Mapping</button>
+          </div>
+        </div>
+
+        <!-- Admin View 3: Roster Import Form -->
+        <div class="view-pane" id="pane-admin-roster" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Student Roster Import</h2>
+            <div style="border: 2px dashed var(--border-strong); border-radius: 12px; padding: 2.5rem; text-align: center; background: var(--bg-surface-2);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+              <div style="font-weight: 600;">Drag & Drop Roster CSV File</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Expected columns: RollNo, Name, Email, Division, Batch</div>
+              <button class="btn btn-secondary" style="margin-top: 1rem;">Browse File</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 4: Sync Control Form -->
+        <div class="view-pane" id="pane-admin-sync" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Sync Control & Frequency</h2>
+            <div class="form-group">
+              <label class="form-label">Polling Interval</label>
+              <select class="form-select">
+                <option>Every 15 Minutes (Default)</option>
+                <option>Every 5 Minutes</option>
+                <option>Every 1 Hour</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="triggerManualSync()">⚡ Trigger Immediate Sync Run</button>
+          </div>
+        </div>
+
+        <!-- Admin View 5: Sync Logs -->
+        <div class="view-pane" id="pane-admin-logs" style="display: none;">
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">14:00:25</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>SUCCESS</span></div>
+              <div class="rc-detail">42 Rows Read • 0 Upserted (SKIPPED_NO_CHANGE)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+    }
+
+    function toggleRole(role) {
+      const studentNav = document.getElementById('student-nav-group');
+      const adminNav = document.getElementById('admin-nav-group');
+      const btnStudent = document.getElementById('btn-role-student');
+      const btnAdmin = document.getElementById('btn-role-admin');
+
+      if (role === 'ADMIN') {
+        studentNav.style.display = 'none';
+        adminNav.style.display = 'block';
+        btnStudent.classList.remove('active');
+        btnAdmin.classList.add('active');
+        switchView('admin-sheet', adminNav.querySelector('.nav-item'));
+      } else {
+        adminNav.style.display = 'none';
+        studentNav.style.display = 'block';
+        btnAdmin.classList.remove('active');
+        btnStudent.classList.add('active');
+        switchView('dashboard', studentNav.querySelector('.nav-item'));
+      }
+    }
+
+    function switchView(viewId, el) {
+      document.querySelectorAll('.view-pane').forEach(pane => pane.style.display = 'none');
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      
+      const targetPane = document.getElementById('pane-' + viewId);
+      if (targetPane) targetPane.style.display = 'flex';
+      if (el) el.classList.add('active');
+
+      const titles = {
+        'dashboard': 'Student Dashboard',
+        'analytics': 'Attendance Analytics',
+        'predictor': 'Attendance Predictor',
+        'history': 'Attendance History',
+        'notifications': 'Notifications',
+        'admin-sheet': 'Admin — Sheet Connection',
+        'admin-mapping': 'Admin — Worksheet Mapping',
+        'admin-roster': 'Admin — Roster Import',
+        'admin-sync': 'Admin — Sync Control',
+        'admin-logs': 'Admin — Sync Logs'
+      };
+      document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
+    }
+
+    function toggleFormula(id) {
+      const panel = document.getElementById(id);
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function testConnection() {
+      const panel = document.getElementById('connection-status-panel');
+      panel.style.display = 'block';
+    }
+
+    function triggerManualSync() {
+      const text = document.getElementById('sync-pulse-text');
+      text.textContent = 'Syncing Google Sheets…';
+      setTimeout(() => {
+        text.textContent = 'Synced just now • Google Sheets API';
+      }, 1500);
+    }
+  </script>
+
+</body>
+</html>

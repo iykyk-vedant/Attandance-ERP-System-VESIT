@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "OpenAttend - Live read-only attendance platform for VESIT",
+  "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "test": "node --test packages/predictor-core/test.js"
+    "test": "node --test packages/predictor-core/test.js && node --test apps/api/test/sync.test.js",
+    "test:predictor": "node --test packages/predictor-core/test.js",
+    "test:sync": "node --test apps/api/test/sync.test.js"
   },
   "workspaces": [
     "apps/*",

@@ -1,5 +1,5 @@
-import { SheetsClient } from './sheets-client';
-import { SyncDiffer } from './differ';
+import { SheetsClient } from './sheets-client.ts';
+import { SyncDiffer } from './differ.ts';
 
 export interface RowMappingConfig {
   dateCol: number;

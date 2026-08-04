@@ -1,8 +1,8 @@
 import assert from 'assert';
-import { UpsertEngine } from '../apps/api/src/sync/upsert-engine.ts';
-import { SyncDiffer } from '../apps/api/src/sync/differ.ts';
+import { UpsertEngine } from '../src/sync/upsert-engine.ts';
+import { SyncDiffer } from '../src/sync/differ.ts';
 
-console.log('Running Sync Engine Idempotency Tests...');
+console.log('Running Sync Engine Idempotency & Fault-Tolerance Tests...');
 
 async function runTests() {
   const engine = new UpsertEngine();
@@ -31,7 +31,23 @@ async function runTests() {
   assert.strictEqual(run2.status, 'SKIPPED_NO_CHANGE');
   assert.strictEqual(run2.rowsUpserted, 0);
 
-  console.log('✅ All Sync Engine Idempotency tests passed!');
+  // Test 3: Row hashing stability check
+  const rowHash1 = SyncDiffer.computeRowHash(['2026-08-01', '2024CS01', 'Present']);
+  const rowHash2 = SyncDiffer.computeRowHash(['2026-08-01', '2024CS01', 'Present']);
+  assert.strictEqual(rowHash1, rowHash2);
+
+  // Test 4: Malformed row handling (skipped rows leading to PARTIAL_FAILURE)
+  const malformedRows = [
+    ['Date', 'Roll No', 'Status'],
+    ['invalid-date', '2024CS01', 'Present'],
+    ['2026-08-01', '', 'Present'],
+    ['2026-08-01', '2024CS02', 'Present']
+  ];
+  const parsed = engine.parseWorksheetRows(malformedRows, { dateCol: 0, rollNoCol: 1, statusCol: 2 });
+  assert.strictEqual(parsed.validRows.length, 1);
+  assert.strictEqual(parsed.skippedCount, 2);
+
+  console.log('✅ All Sync Engine tests passed cleanly!');
 }
 
 runTests().catch(err => {
