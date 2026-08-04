@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "test": "node --test packages/predictor-core/test.js && node --test apps/api/test/sync.test.js",
+    "test": "node --test packages/predictor-core/test.js && node --test apps/api/test/sync.test.js && node --test apps/api/test/milestones.test.js",
     "test:predictor": "node --test packages/predictor-core/test.js",
-    "test:sync": "node --test apps/api/test/sync.test.js"
+    "test:sync": "node --test apps/api/test/sync.test.js",
+    "test:milestones": "node --test apps/api/test/milestones.test.js"
   },
   "workspaces": [
     "apps/*",
