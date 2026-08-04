@@ -677,11 +677,238 @@
       font-weight: 600;
     }
 
+    /* Glassmorphic Login Modal & Auth Overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 17, 21, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 1;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .auth-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 440px;
+      padding: 2.25rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      animation: auth-card-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes auth-card-pop {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .auth-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .auth-logo-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 0.25rem;
+      box-shadow: 0 4px 12px rgba(47, 111, 94, 0.3);
+    }
+
+    .auth-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--bg-surface-2);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 0.55rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .auth-alert {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .auth-alert-error {
+      background: rgba(214, 69, 69, 0.1);
+      border: 1px solid var(--state-risk);
+      color: var(--state-risk);
+    }
+
+    .quick-demo-section {
+      background: var(--bg-surface-2);
+      border: 1px dashed var(--border-strong);
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .quick-demo-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      letter-spacing: 0.5px;
+    }
+
+    .quick-chips {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .quick-chip-btn {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem;
+      font-size: 12px;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .quick-chip-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Sidebar Profile Bar */
+    .user-profile-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      margin-top: auto;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .user-avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .user-display-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role-badge {
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text-secondary);
+    }
+
+    .logout-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .logout-action-btn:hover {
+      color: var(--state-risk);
+      background: var(--bg-surface-2);
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
       aside.sidebar { width: 100%; height: 60px; top: auto; bottom: 0; border-right: none; border-top: 1px solid var(--border-subtle); flex-direction: row; padding: 0 1rem; }
       main.main-content { margin-left: 0; margin-bottom: 60px; }
-      .brand-header, .nav-section-title, .sidebar-footer { display: none; }
+      .brand-header, .nav-section-title, .sidebar-footer, .user-profile-bar { display: none; }
       .nav-section { display: flex; width: 100%; justify-content: space-around; margin: 0; }
       .hero-ring-card { flex-direction: column; text-align: center; }
     }
@@ -719,6 +946,16 @@
         <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Sync Logs</div>
       </div>
 
+      <!-- Sidebar User Profile Bar -->
+      <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
+        <div class="user-avatar-circle" id="user-avatar-initials">VG</div>
+        <div class="user-details">
+          <div class="user-display-name" id="user-name-display">Vedant Gharat</div>
+          <div class="user-role-badge" id="user-role-display">STUDENT • 2024CS01</div>
+        </div>
+        <button class="logout-action-btn" title="Sign Out" onclick="handleLogout()">🚪</button>
+      </div>
+
       <!-- Sidebar Footer with Role Switcher -->
       <div class="sidebar-footer">
         <div class="role-switcher">
@@ -727,6 +964,55 @@
         </div>
       </div>
     </aside>
+
+    <!-- Glassmorphic Login Overlay Modal -->
+    <div class="auth-overlay" id="auth-modal">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo-badge">✓</div>
+          <h2 class="auth-title">Welcome to OpenAttend</h2>
+          <p class="auth-subtitle">Sign in with your official VESIT email address (<span style="font-family: monospace;">@ves.ac.in</span>)</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="auth-tab-student" onclick="switchAuthTab('STUDENT')">🎓 Student Login</button>
+          <button class="auth-tab-btn" id="auth-tab-admin" onclick="switchAuthTab('ADMIN')">⚡ Admin Login</button>
+        </div>
+
+        <div class="auth-alert auth-alert-error" id="auth-error-alert">
+          <span>⚠️</span>
+          <span id="auth-error-text">Invalid email or password</span>
+        </div>
+
+        <form id="auth-login-form" onsubmit="submitAuthLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="auth-email-input">Official Email Address</label>
+            <input type="email" id="auth-email-input" class="form-input" placeholder="student@ves.ac.in" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="auth-password-input">Password</label>
+            <input type="password" id="auth-password-input" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width: 100%; padding: 0.75rem; font-size: 14px; margin-top: 0.25rem;">
+            Sign In to Dashboard →
+          </button>
+        </form>
+
+        <div class="quick-demo-section">
+          <div class="quick-demo-title">⚡ Instant Demo 1-Click Fill:</div>
+          <div class="quick-chips">
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('STUDENT')">
+              <span>🎓</span> Student Demo
+            </button>
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('ADMIN')">
+              <span>⚡</span> Admin Demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -1144,13 +1430,131 @@
       panel.style.display = 'block';
     }
 
-    function triggerManualSync() {
-      const text = document.getElementById('sync-pulse-text');
-      text.textContent = 'Syncing Google Sheets…';
-      setTimeout(() => {
-        text.textContent = 'Synced just now • Google Sheets API';
-      }, 1500);
+    let currentAuthRole = 'STUDENT';
+    let currentUserSession = null;
+
+    function switchAuthTab(role) {
+      currentAuthRole = role;
+      document.getElementById('auth-tab-student').classList.toggle('active', role === 'STUDENT');
+      document.getElementById('auth-tab-admin').classList.toggle('active', role === 'ADMIN');
+      document.getElementById('auth-email-input').placeholder = role === 'ADMIN' ? 'admin@ves.ac.in' : 'student@ves.ac.in';
+      hideAuthError();
     }
+
+    function fillQuickDemo(role) {
+      switchAuthTab(role);
+      if (role === 'ADMIN') {
+        document.getElementById('auth-email-input').value = 'admin@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'admin123';
+      } else {
+        document.getElementById('auth-email-input').value = 'student@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'password123';
+      }
+      hideAuthError();
+      submitAuthLogin();
+    }
+
+    function showAuthError(msg) {
+      const alert = document.getElementById('auth-error-alert');
+      document.getElementById('auth-error-text').textContent = msg;
+      alert.style.display = 'flex';
+    }
+
+    function hideAuthError() {
+      document.getElementById('auth-error-alert').style.display = 'none';
+    }
+
+    async function submitAuthLogin(e) {
+      if (e) e.preventDefault();
+      hideAuthError();
+
+      const email = document.getElementById('auth-email-input').value.trim();
+      const password = document.getElementById('auth-password-input').value;
+      const submitBtn = document.getElementById('auth-submit-btn');
+
+      if (!email.toLowerCase().endsWith('@ves.ac.in')) {
+        showAuthError('Only official @ves.ac.in institutional email addresses are permitted.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating…';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          showAuthError(data.error || 'Authentication failed');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to Dashboard →';
+          return;
+        }
+
+        // Save session locally
+        currentUserSession = data.session;
+        localStorage.setItem('openattend_session', JSON.stringify(data.session));
+
+        applyUserSession(data.session);
+        document.getElementById('auth-modal').classList.add('hidden');
+
+      } catch (err) {
+        showAuthError('Unable to connect to authentication server.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In to Dashboard →';
+      }
+    }
+
+    function applyUserSession(session) {
+      currentUserSession = session;
+      const initials = session.name ? session.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+      
+      document.getElementById('user-avatar-initials').textContent = initials;
+      document.getElementById('user-name-display').textContent = session.name || session.email;
+      document.getElementById('user-role-display').textContent = `${session.role} • ${session.rollNo || ''}`;
+      document.getElementById('user-profile-bar').style.display = 'flex';
+
+      toggleRole(session.role);
+    }
+
+    function handleLogout() {
+      if (currentUserSession && currentUserSession.accessToken) {
+        fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + currentUserSession.accessToken }
+        }).catch(() => {});
+      }
+
+      currentUserSession = null;
+      localStorage.removeItem('openattend_session');
+
+      document.getElementById('user-profile-bar').style.display = 'none';
+      document.getElementById('auth-email-input').value = '';
+      document.getElementById('auth-password-input').value = '';
+      hideAuthError();
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    // Auto-login check on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('openattend_session');
+      if (saved) {
+        try {
+          const session = JSON.parse(saved);
+          if (session && session.accessToken) {
+            applyUserSession(session);
+            document.getElementById('auth-modal').classList.add('hidden');
+            return;
+          }
+        } catch (e) {}
+      }
+      document.getElementById('auth-modal').classList.remove('hidden');
+    });
   </script>
 
 </body>
