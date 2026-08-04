@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: openattend_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: openattend
+      POSTGRES_USER: openattend
+      POSTGRES_PASSWORD: openattend_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: openattend_api
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://openattend:openattend_secure_password@postgres:5432/openattend?schema=public"
+      JWT_SECRET: "openattend-super-secret-key-2026"
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+    container_name: openattend_web
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

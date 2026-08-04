@@ -1,0 +1,17 @@
+{
+  "name": "openattend-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAttend - Live read-only attendance platform for VESIT",
+  "scripts": {
+    "dev": "node server.js",
+    "test": "node --test packages/predictor-core/test.js"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "crypto": "^1.0.1"
+  }
+}
