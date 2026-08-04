@@ -32,6 +32,9 @@ const users = new Map([
 const sessions = new Map();
 
 function sendJson(res, statusCode, data) {
+  if (res.status && typeof res.status === 'function') {
+    return res.status(statusCode).json(data);
+  }
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -40,31 +43,44 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
-export default async function handler(req, res) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.statusCode = 204;
-    return res.end();
+async function getRequestBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'object') return req.body;
+    try { return JSON.parse(req.body); } catch (e) { return {}; }
   }
 
-  const url = req.url || '';
-
-  // Auth Login Route
-  if (url.includes('/api/v1/auth/login') && req.method === 'POST') {
+  return new Promise((resolve) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    await new Promise(resolve => req.on('end', resolve));
+    req.on('end', () => {
+      try { resolve(JSON.parse(body || '{}')); } catch (e) { resolve({}); }
+    });
+  });
+}
 
-    try {
-      const { email, password } = JSON.parse(body || '{}');
+export default async function handler(req, res) {
+  try {
+    // CORS Preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.statusCode = 204;
+      return res.end();
+    }
+
+    const url = req.url || '';
+
+    // Auth Login Route
+    if ((url.includes('/auth/login') || url.includes('/login')) && req.method === 'POST') {
+      const bodyData = await getRequestBody(req);
+      const { email, password } = bodyData;
+
       if (!email || !password) {
         return sendJson(res, 400, { success: false, error: 'Email and password are required.' });
       }
 
-      const cleanEmail = email.trim().toLowerCase();
+      const cleanEmail = String(email).trim().toLowerCase();
       if (!cleanEmail.endsWith('@ves.ac.in')) {
         return sendJson(res, 400, { success: false, error: 'Access restricted: Only official @ves.ac.in email addresses are permitted.' });
       }
@@ -74,7 +90,7 @@ export default async function handler(req, res) {
         return sendJson(res, 401, { success: false, error: 'Invalid credentials. Check your email and password.' });
       }
 
-      const inputHash = crypto.createHash('sha256').update(password).digest('hex');
+      const inputHash = crypto.createHash('sha256').update(String(password)).digest('hex');
       if (inputHash !== user.passHash) {
         return sendJson(res, 401, { success: false, error: 'Invalid credentials. Password does not match.' });
       }
@@ -93,28 +109,28 @@ export default async function handler(req, res) {
 
       sessions.set(accessToken, sessionData);
       return sendJson(res, 200, { success: true, message: 'Authentication successful', session: sessionData });
-    } catch (err) {
-      return sendJson(res, 500, { success: false, error: 'Server error processing request' });
     }
-  }
 
-  // Auth Me Route
-  if (url.includes('/api/v1/auth/me') && req.method === 'GET') {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.replace('Bearer ', '').trim();
-    if (!token || !sessions.has(token)) {
-      return sendJson(res, 401, { success: false, error: 'Unauthorized or expired session' });
+    // Auth Me Route
+    if ((url.includes('/auth/me') || url.includes('/me')) && req.method === 'GET') {
+      const authHeader = req.headers['authorization'] || '';
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (!token || !sessions.has(token)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized or expired session' });
+      }
+      return sendJson(res, 200, { success: true, user: sessions.get(token) });
     }
-    return sendJson(res, 200, { success: true, user: sessions.get(token) });
-  }
 
-  // Auth Logout Route
-  if (url.includes('/api/v1/auth/logout') && req.method === 'POST') {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.replace('Bearer ', '').trim();
-    if (token) sessions.delete(token);
-    return sendJson(res, 200, { success: true, message: 'Logged out successfully' });
-  }
+    // Auth Logout Route
+    if ((url.includes('/auth/logout') || url.includes('/logout')) && req.method === 'POST') {
+      const authHeader = req.headers['authorization'] || '';
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (token) sessions.delete(token);
+      return sendJson(res, 200, { success: true, message: 'Logged out successfully' });
+    }
 
-  return sendJson(res, 404, { success: false, error: 'API Endpoint Not Found' });
+    return sendJson(res, 404, { success: false, error: 'API Endpoint Not Found' });
+  } catch (err) {
+    return sendJson(res, 500, { success: false, error: err.message || 'Internal Server Error' });
+  }
 }
