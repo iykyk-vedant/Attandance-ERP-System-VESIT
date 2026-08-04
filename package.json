@@ -5,7 +5,7 @@
   "description": "OpenAttend - Live read-only attendance platform for VESIT",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
+    "dev": "node dev-server.js",
     "test": "npx tsx --test packages/predictor-core/test.js && npx tsx --test apps/api/test/sync.test.js && npx tsx --test apps/api/test/milestones.test.js",
     "test:predictor": "npx tsx --test packages/predictor-core/test.js",
     "test:sync": "npx tsx --test apps/api/test/sync.test.js",
