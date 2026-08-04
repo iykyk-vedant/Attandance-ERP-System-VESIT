@@ -4,6 +4,7 @@
   "private": true,
   "description": "OpenAttend - Live read-only attendance platform for VESIT",
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "build": "echo 'Static build ready'",
     "dev": "node dev-server.js",
