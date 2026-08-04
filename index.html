@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenAttend — Live Companion Platform for VESIT Attendance</title>
-  <meta name="description" content="Live read-only companion platform for VESIT attendance. Google Sheets sync, attendance predictor, and defaulter tracking.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PWA & Mobile Web App Settings -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2F6F5E">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OpenAttend">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%232F6F5E'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='white'>✓</text></svg>">
   <style>
     :root[data-theme="light"] {
       --bg-base:        #FAFAF8;
@@ -1587,7 +1590,12 @@
           }
         } catch (e) {}
       }
-      document.getElementById('auth-modal').classList.remove('hidden');
+      // Register PWA Service Worker
+      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        navigator.serviceWorker.register('/sw.js').then(() => {
+          console.log('OpenAttend PWA Service Worker Registered');
+        }).catch(() => {});
+      }
     });
   </script>
 

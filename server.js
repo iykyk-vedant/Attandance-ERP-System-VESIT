@@ -145,7 +145,8 @@ const server = http.createServer((req, res) => {
       contentType = 'text/css';
       break;
     case '.json':
-      contentType = 'application/json';
+    case '.webmanifest':
+      contentType = 'application/manifest+json';
       break;
   }
 

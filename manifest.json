@@ -1,0 +1,18 @@
+{
+  "name": "OpenAttend — VESIT Attendance",
+  "short_name": "OpenAttend",
+  "description": "Live companion platform for VESIT attendance. Google Sheets sync, attendance predictor, and defaulter tracking.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14161A",
+  "theme_color": "#2F6F5E",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%232F6F5E'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='white'>✓</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
