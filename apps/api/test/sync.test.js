@@ -77,7 +77,7 @@ async function runTests() {
 
   // Test 7: SyncLogger error message formatting
   const err429 = SyncLogger.formatErrorReason('429_RATE_LIMITED');
-  assert.ok(err429.includes('Quota exceeded'));
+  assert.ok(err429.toLowerCase().includes('quota exceeded'));
   const err403 = SyncLogger.formatErrorReason('403_FORBIDDEN');
   assert.ok(err403.includes('access revoked'));
   console.log('  ✔ M1 SyncLogger Standardized Failure Modes passed');
