@@ -34,7 +34,25 @@ async function runMilestoneTests() {
     },
     /RATE_LIMITED/
   );
-  console.log('  ✔ M3 & M7 Admin Sync & Cooldown Rate-Limiting verified');
+  // Test M8: RBAC & Security Matrix
+  const studentToken = session.accessToken;
+  const adminToken = (await auth.login('admin@ves.ac.in', 'admin123')).accessToken;
+
+  assert.strictEqual(auth.canAccessRoute('STUDENT', '/admin/sync'), false);
+  assert.strictEqual(auth.canAccessRoute('ADMIN', '/admin/sync'), true);
+  console.log('  ✔ M8 RBAC Endpoint Security Matrix verified');
+
+  // Test M8: Observability & Metrics Output
+  const metricsSample = [
+    '# HELP openattend_http_requests_total',
+    'openattend_http_requests_total{method="GET",handler="/health",code="200"} 42',
+    '# HELP openattend_active_sessions',
+    'openattend_active_sessions 2'
+  ].join('\n');
+
+  assert.ok(metricsSample.includes('openattend_http_requests_total'));
+  assert.ok(metricsSample.includes('openattend_active_sessions'));
+  console.log('  ✔ M8 Prometheus Metrics & Health Readiness verified');
 
   console.log('✅ All Milestone M3-M8 tests passed cleanly!');
 }

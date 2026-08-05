@@ -51,4 +51,11 @@ export class AuthService {
       refreshToken
     };
   }
+
+  canAccessRoute(role: 'STUDENT' | 'ADMIN' | 'SUPER_ADMIN', path: string): boolean {
+    if (path.startsWith('/admin')) {
+      return role === 'ADMIN' || role === 'SUPER_ADMIN';
+    }
+    return true;
+  }
 }
