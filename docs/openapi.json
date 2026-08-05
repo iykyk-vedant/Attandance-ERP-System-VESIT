@@ -1,0 +1,121 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "OpenAttend API Specification",
+    "description": "Live read-only companion platform for VESIT attendance.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Development Server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check Endpoint",
+        "responses": {
+          "200": { "description": "Service is healthy and active" }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "Readiness Check Endpoint",
+        "responses": {
+          "200": { "description": "Database and sync engines are ready" }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus Metrics Endpoint",
+        "responses": {
+          "200": { "description": "Prometheus formatted metrics" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate User with VESIT Institutional Email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "student@ves.ac.in" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authentication successful, returns user session" },
+          "400": { "description": "Invalid email domain or missing fields" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/attendance/overall": {
+      "get": {
+        "summary": "Get Overall Student Attendance and Predictor Calculation",
+        "responses": {
+          "200": { "description": "Returns overall percentage, counts, and predictor state" }
+        }
+      }
+    },
+    "/attendance/subjects": {
+      "get": {
+        "summary": "Get Per-Subject Attendance Breakdown",
+        "responses": {
+          "200": { "description": "List of subjects with percentages and safe skips" }
+        }
+      }
+    },
+    "/attendance/history": {
+      "get": {
+        "summary": "Get Roll Call Attendance History Log",
+        "responses": {
+          "200": { "description": "Filterable attendance roll call events" }
+        }
+      }
+    },
+    "/attendance/analytics": {
+      "get": {
+        "summary": "Get Weekly Trends and Subject Comparison Deltas",
+        "responses": {
+          "200": { "description": "Weekly percentage trends and subject deltas" }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "Get System Notifications",
+        "responses": {
+          "200": { "description": "List of threshold warnings and sync update notifications" }
+        }
+      }
+    },
+    "/admin/sheet/verify": {
+      "post": {
+        "summary": "Verify Google Sheet Connection and Detect Tabs",
+        "responses": {
+          "200": { "description": "Sheet verified successfully, returns detected worksheet tabs" }
+        }
+      }
+    },
+    "/admin/sync/trigger": {
+      "post": {
+        "summary": "Trigger Manual Google Sheet Sync Run",
+        "responses": {
+          "200": { "description": "Sync completed successfully" },
+          "429": { "description": "Sync cooldown active" }
+        }
+      }
+    }
+  }
+}
