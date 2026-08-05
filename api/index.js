@@ -266,6 +266,88 @@ export default async function handler(req, res) {
       return sendJson(res, 200, { success: true, message: 'All notifications marked as read' });
     }
 
+    // --- Admin Endpoints (M7) ---
+    if (url.includes('/admin/sheet/verify') && req.method === 'POST') {
+      return sendJson(res, 200, {
+        success: true,
+        verified: true,
+        title: 'VESIT Attendance 2026',
+        tabs: ['Student List', 'CS401', 'CS402', 'CS403', 'Defaulters']
+      });
+    }
+
+    if (url.includes('/admin/mapping') && req.method === 'POST') {
+      return sendJson(res, 200, {
+        success: true,
+        message: 'Worksheet mapping saved successfully'
+      });
+    }
+
+    if (url.includes('/admin/roster/preview') && req.method === 'POST') {
+      return sendJson(res, 200, {
+        success: true,
+        summary: { total: 4, create: 2, update: 1, error: 1 },
+        rows: [
+          { rollNo: '2024CS04', name: 'Aarav Sharma', email: 'aarav.sharma@ves.ac.in', status: 'CREATE' },
+          { rollNo: '2024CS05', name: 'Ananya Iyer', email: 'ananya.iyer@ves.ac.in', status: 'CREATE' },
+          { rollNo: '2024CS01', name: 'Vedant Gharat', email: 'vedant.gharat@ves.ac.in', status: 'UPDATE' },
+          { rollNo: 'INVALID', name: 'Rohan Mehta', email: 'rohan@gmail.com', status: 'ERROR', reason: 'Invalid email domain (must be @ves.ac.in)' }
+        ]
+      });
+    }
+
+    if (url.includes('/admin/sync/trigger') && req.method === 'POST') {
+      return sendJson(res, 200, {
+        success: true,
+        status: 'SUCCESS',
+        log: {
+          id: `sync_${Date.now()}`,
+          rowsRead: 42,
+          rowsUpserted: 0,
+          status: 'SKIPPED_NO_CHANGE',
+          durationMs: 340
+        }
+      });
+    }
+
+    if (url.includes('/admin/sync/logs') && req.method === 'GET') {
+      return sendJson(res, 200, {
+        success: true,
+        logs: [
+          {
+            id: 'sync_log_101',
+            timestamp: '2026-08-05T14:00:00Z',
+            sheet: 'CS401 • Data Structures',
+            status: 'SKIPPED_NO_CHANGE',
+            rowsRead: 42,
+            rowsUpserted: 0,
+            durationMs: 320,
+            detail: 'Range hash matched existing check; zero changes detected.'
+          },
+          {
+            id: 'sync_log_100',
+            timestamp: '2026-08-05T13:45:00Z',
+            sheet: 'CS403 • Database Systems',
+            status: 'PARTIAL_FAILURE',
+            rowsRead: 40,
+            rowsUpserted: 38,
+            durationMs: 480,
+            detail: 'Sync completed with malformed/skipped rows: 2 rows skipped (missing date or status).'
+          },
+          {
+            id: 'sync_log_99',
+            timestamp: '2026-08-05T13:30:00Z',
+            sheet: 'CS402 • Operating Systems',
+            status: 'SUCCESS',
+            rowsRead: 44,
+            rowsUpserted: 2,
+            durationMs: 410,
+            detail: '2 new attendance records upserted cleanly.'
+          }
+        ]
+      });
+    }
+
     return sendJson(res, 404, { success: false, error: 'API Endpoint Not Found' });
   } catch (err) {
     return sendJson(res, 500, { success: false, error: err.message || 'Internal Server Error' });

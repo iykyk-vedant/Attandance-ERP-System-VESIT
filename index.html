@@ -1470,43 +1470,139 @@
           </div>
         </div>
 
-        <!-- Admin View 3: Roster Import Form -->
-        <div class="view-pane" id="pane-admin-roster" style="display: none;">
+        <!-- Admin View 3: Roster Import Form with Pre-Commit Preview -->
+        <div class="view-pane" id="pane-admin-roster" style="display: none; flex-direction: column; gap: 1.5rem;">
           <div class="form-panel">
             <h2 style="font-size: 1.2rem; font-weight: 600;">Student Roster Import</h2>
-            <div style="border: 2px dashed var(--border-strong); border-radius: 12px; padding: 2.5rem; text-align: center; background: var(--bg-surface-2);">
+            <p style="color: var(--text-secondary); font-size: 13px;">Upload student CSV roster to preview record diffs before committing to database (PRD §8.9).</p>
+
+            <div style="border: 2px dashed var(--border-strong); border-radius: 12px; padding: 2rem; text-align: center; background: var(--bg-surface-2);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
               <div style="font-weight: 600;">Drag & Drop Roster CSV File</div>
-              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Expected columns: RollNo, Name, Email, Division, Batch</div>
-              <button class="btn btn-secondary" style="margin-top: 1rem;">Browse File</button>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Columns: RollNo, Name, Email, Division, Batch</div>
+              <button class="btn btn-secondary" onclick="previewRosterCSV()" style="margin-top: 1rem;">⚡ Load Sample Roster Preview</button>
+            </div>
+
+            <!-- Pre-Commit Diff Preview Table -->
+            <div id="roster-preview-panel" style="display: none; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-2); padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <span style="font-weight: 600; font-size: 13px;">Pre-Commit Diff Summary: 4 Total Rows</span>
+                <div style="display: flex; gap: 0.5rem; font-size: 11px; font-weight: 700;">
+                  <span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 8px; border-radius: 4px;">2 Create</span>
+                  <span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 8px; border-radius: 4px;">1 Update</span>
+                  <span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px;">1 Error</span>
+                </div>
+              </div>
+
+              <table class="column-preview-table" style="font-size: 12px;">
+                <thead>
+                  <tr style="text-align: left;">
+                    <th>Action</th>
+                    <th>Roll No</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Validation Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS04</td>
+                    <td>Aarav Sharma</td>
+                    <td class="font-mono">aarav.sharma@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS05</td>
+                    <td>Ananya Iyer</td>
+                    <td class="font-mono">ananya.iyer@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 6px; border-radius: 4px; font-weight: 700;">UPDATE</span></td>
+                    <td class="font-mono">2024CS01</td>
+                    <td>Vedant Gharat</td>
+                    <td class="font-mono">vedant.gharat@ves.ac.in</td>
+                    <td style="color: var(--state-warn);">Existing roll number (metadata update)</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 6px; border-radius: 4px; font-weight: 700;">ERROR</span></td>
+                    <td class="font-mono">INVALID</td>
+                    <td>Rohan Mehta</td>
+                    <td class="font-mono">rohan@gmail.com</td>
+                    <td style="color: var(--state-risk);">Invalid domain (must end with @ves.ac.in)</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <button class="btn btn-primary" onclick="commitRosterImport()" style="align-self: flex-start;">💾 Confirm & Commit 3 Valid Rows</button>
             </div>
           </div>
         </div>
 
-        <!-- Admin View 4: Sync Control Form -->
-        <div class="view-pane" id="pane-admin-sync" style="display: none;">
+        <!-- Admin View 4: Sync Control Form & Cooldown -->
+        <div class="view-pane" id="pane-admin-sync" style="display: none; flex-direction: column; gap: 1.5rem;">
           <div class="form-panel">
             <h2 style="font-size: 1.2rem; font-weight: 600;">Sync Control & Frequency</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Manage background automated polling frequency and trigger manual runs with rate-limit cooldowns (PRD §8.7).</p>
+
             <div class="form-group">
-              <label class="form-label">Polling Interval</label>
-              <select class="form-select">
-                <option>Every 15 Minutes (Default)</option>
+              <label class="form-label">Polling Interval Frequency</label>
+              <select class="form-select" style="max-width: 300px;">
+                <option selected>Every 15 Minutes (Default)</option>
                 <option>Every 5 Minutes</option>
                 <option>Every 1 Hour</option>
               </select>
             </div>
-            <button class="btn btn-primary" onclick="triggerManualSync()">⚡ Trigger Immediate Sync Run</button>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btn-trigger-sync" onclick="triggerManualSync()">⚡ Trigger Immediate Sync Run</button>
+              <div id="sync-cooldown-timer" style="display: none; font-size: 12px; font-weight: 600; color: var(--state-warn); background: rgba(201, 138, 30, 0.12); padding: 0.4rem 0.85rem; border-radius: 6px;">
+                ⏳ Rate limit cooldown active: Please wait <span id="cooldown-seconds">60</span>s before re-triggering.
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Admin View 5: Sync Logs -->
-        <div class="view-pane" id="pane-admin-logs" style="display: none;">
-          <div class="roll-call-stack">
-            <div class="roll-call-row">
-              <div class="rc-date font-mono">14:00:25</div>
-              <div class="rc-subject">CS401 • Data Structures</div>
-              <div class="rc-status"><div class="status-dot dot-safe"></div><span>SUCCESS</span></div>
-              <div class="rc-detail">42 Rows Read • 0 Upserted (SKIPPED_NO_CHANGE)</div>
+        <!-- Admin View 5: Sync Logs with Expandable Details -->
+        <div class="view-pane" id="pane-admin-logs" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 600;">System Sync Logs</h3>
+              <p style="color: var(--text-secondary); font-size: 12px;">Detailed audit log of background sync runs and itemized skip reasons (PRD §11.4).</p>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshAdminLogs()" style="font-size: 12px;">🔄 Refresh Logs</button>
+          </div>
+
+          <div class="roll-call-stack" id="admin-sync-logs-list">
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-1')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">14:00:25</div>
+                <div class="rc-subject">CS401 • Data Structures</div>
+                <div class="rc-status"><div class="status-dot dot-safe"></div><span>SKIPPED</span></div>
+                <div class="rc-detail">42 Rows Read • 0 Upserted</div>
+              </div>
+              <div id="log-detail-1" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--text-secondary);" class="font-mono">
+                Run Status: SKIPPED_NO_CHANGE<br>
+                Content Hash: 8f4a21b3... SHA-256<br>
+                Detail: Range hash matched existing check; zero changes detected.
+              </div>
+            </div>
+
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-2')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">13:45:10</div>
+                <div class="rc-subject">CS403 • Database Systems</div>
+                <div class="rc-status"><div class="status-dot dot-warn"></div><span>PARTIAL</span></div>
+                <div class="rc-detail">40 Rows Read • 38 Upserted</div>
+              </div>
+              <div id="log-detail-2" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--state-warn);" class="font-mono">
+                Run Status: PARTIAL_FAILURE<br>
+                Itemized Skip Reasons:<br>
+                - Row 14: Invalid date format ("invalid-date")<br>
+                - Row 27: Roll number "2024CS99" not found in student roster
+              </div>
             </div>
           </div>
         </div>
@@ -1575,6 +1671,68 @@
     function testConnection() {
       const panel = document.getElementById('connection-status-panel');
       panel.style.display = 'block';
+    }
+
+    // --- M7 Admin Helper Functions ---
+    function previewRosterCSV() {
+      const panel = document.getElementById('roster-preview-panel');
+      panel.style.display = 'flex';
+    }
+
+    function commitRosterImport() {
+      alert('✅ Student roster import committed: 2 new students created, 1 updated.');
+      document.getElementById('roster-preview-panel').style.display = 'none';
+    }
+
+    let syncCooldownInterval = null;
+    function triggerManualSync() {
+      const btn = document.getElementById('btn-trigger-sync');
+      const timerBox = document.getElementById('sync-cooldown-timer');
+      const secEl = document.getElementById('cooldown-seconds');
+
+      btn.disabled = true;
+      btn.textContent = '⚡ Syncing in Progress…';
+
+      fetch('/api/v1/admin/sync/trigger', { method: 'POST' })
+        .then(res => res.json())
+        .then(() => {
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+          timerBox.style.display = 'block';
+          let timeLeft = 60;
+          secEl.textContent = timeLeft;
+
+          if (syncCooldownInterval) clearInterval(syncCooldownInterval);
+          syncCooldownInterval = setInterval(() => {
+            timeLeft--;
+            secEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+              clearInterval(syncCooldownInterval);
+              timerBox.style.display = 'none';
+              btn.disabled = false;
+            }
+          }, 1000);
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+        });
+    }
+
+    function toggleLogDetail(logId) {
+      const el = document.getElementById(logId);
+      if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    function refreshAdminLogs() {
+      fetch('/api/v1/admin/sync/logs')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert('🔄 Admin sync audit log refreshed with latest entries.');
+          }
+        });
     }
 
     // --- M6 Interactive Helper Functions ---
