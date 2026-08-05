@@ -132,6 +132,87 @@ const server = http.createServer((req, res) => {
     return sendJson(res, 200, { success: true, message: 'Logged out successfully' });
   }
 
+  if (req.url === '/api/v1/attendance/overall' && req.method === 'GET') {
+    return sendJson(res, 200, {
+      success: true,
+      rollNo: '2024CS01',
+      overallPct: 80.2,
+      present: 101,
+      total: 126,
+      absent: 25,
+      isDefaulter: false,
+      predictor: {
+        present: 101,
+        total: 126,
+        pct: 80.2,
+        threshold: 75,
+        status: 'SAFE',
+        safeSkips: 8,
+        mustAttend: 0,
+        message: 'Safe to skip 8 more lecture(s) while remaining above 75% threshold.'
+      }
+    });
+  }
+
+  if (req.url === '/api/v1/attendance/subjects' && req.method === 'GET') {
+    return sendJson(res, 200, {
+      success: true,
+      subjects: [
+        {
+          code: 'CS401',
+          name: 'Data Structures & Algorithms',
+          present: 36,
+          total: 42,
+          pct: 85.7,
+          predictor: {
+            status: 'SAFE',
+            safeSkips: 6,
+            mustAttend: 0,
+            message: 'Safe to skip 6 lecture(s).'
+          }
+        },
+        {
+          code: 'CS402',
+          name: 'Operating Systems',
+          present: 36,
+          total: 44,
+          pct: 81.8,
+          predictor: {
+            status: 'SAFE',
+            safeSkips: 4,
+            mustAttend: 0,
+            message: 'Safe to skip 4 lecture(s).'
+          }
+        },
+        {
+          code: 'CS403',
+          name: 'Database Management Systems',
+          present: 29,
+          total: 40,
+          pct: 72.5,
+          predictor: {
+            status: 'RISK',
+            safeSkips: 0,
+            mustAttend: 4,
+            message: 'Must attend 4 consecutive lecture(s) to reach 75% threshold.'
+          }
+        }
+      ]
+    });
+  }
+
+  if (req.url === '/api/v1/attendance/history' && req.method === 'GET') {
+    return sendJson(res, 200, {
+      success: true,
+      history: [
+        { date: '2026-08-05', subject: 'CS401 • Data Structures', status: 'Present', faculty: 'Dr. Rao' },
+        { date: '2026-08-04', subject: 'CS402 • Operating Systems', status: 'Present', faculty: 'Prof. Sharma' },
+        { date: '2026-08-03', subject: 'CS403 • Database Systems', status: 'Absent', faculty: 'Dr. Patel' },
+        { date: '2026-08-02', subject: 'CS401 • Data Structures', status: 'Present', faculty: 'Dr. Rao' }
+      ]
+    });
+  }
+
   // --- STATIC FILE SERVER ---
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
   let extname = path.extname(filePath);
