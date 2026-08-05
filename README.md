@@ -1,26 +1,52 @@
-# OpenAttend — Live Companion Platform for VESIT Attendance
+<p align="center"> 
+  <br/>
+  <a href="https://github.com/iykyk-vedant/OpenAttend-VESIT/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?color=3F51B5&style=for-the-badge&label=License&logoColor=000000&labelColor=ececec" alt="License: MIT"></a>
+  <a href="https://github.com/iykyk-vedant/OpenAttend-VESIT/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/iykyk-vedant/OpenAttend-VESIT/ci.yml?branch=main&label=CI%20Pipeline&logo=github&style=for-the-badge&logoColor=000000&labelColor=ececec" alt="CI Pipeline"/>
+  </a>
+  <br/>
+  <br/>
+</p>
 
-[![CI Pipeline](https://github.com/iykyk-vedant/OpenAttend-VESIT/actions/workflows/ci.yml/badge.svg)](https://github.com/iykyk-vedant/OpenAttend-VESIT/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <h1 align="center">OpenAttend — VESIT</h1>
+</p>
+<h3 align="center">High performance live companion attendance platform for VESIT</h3>
+<br/>
 
-OpenAttend is a **read-only companion attendance platform** tailored for VESIT. Faculty continue marking attendance as before via Google Forms into Google Sheets. OpenAttend incrementally polls the spreadsheet via Google Sheets API, normalizes the logs into PostgreSQL, and serves a live real-time dashboard for students and admins.
+> [!IMPORTANT]
+> ⚠️ **OpenAttend** is a read-only companion attendance platform tailored for VESIT. Faculty mark attendance via Google Forms into Google Sheets while OpenAttend normalizes and syncs data into PostgreSQL in real time!
 
----
+> [!NOTE]
+> Detailed documentation, technical specs, and roadmap can be found in the [`docs/`](docs/) directory.
 
-## ⚡ Core Features
+## Links
 
-1. **Idempotent Sync Engine**: Zero duplicate records across repeated sync runs (`spreadsheets.readonly`).
-2. **Attendance Predictor**: Calculates exact safe skips remaining or required consecutive attendance to reach 75%.
-3. **Role-Based Access Control (RBAC)**: Dedicated views and permissions for Students, Faculty, and Admin.
-4. **SyncPulse Indicator**: Real-time staleness tracking and live sync status breathing indicator.
+- [Documentation](docs/PRD.md)
+- [Milestone Roadmap](docs/Milestone.md)
+- [UI Specification](docs/UI.md)
+- [Features](#features)
+- [Quick Start](#quick-start-local-setup)
+- [Docker Setup](#docker-deployment)
+- [Testing](#testing)
 
----
+## Features
 
-## 🚀 Quick Start (Local Setup)
+| Features                                     | Student | Admin / Faculty |
+| :------------------------------------------- | :-----: | :-------------: |
+| Real-time Google Sheets Sync & Normalization | Yes     | Yes             |
+| Idempotent Sync Engine (Zero Duplicates)    | Yes     | Yes             |
+| Attendance Predictor (Safe Skips & Targets)  | Yes     | Yes             |
+| SyncPulse Staleness & Live Status Indicator  | Yes     | Yes             |
+| Role-Based Access Control (RBAC)             | Yes     | Yes             |
+| Interactive Analytics & Visual Graphs        | Yes     | Yes             |
+| User & System Admin Management               | No      | Yes             |
+
+## Quick Start (Local Setup)
 
 ### Prerequisites
-- Node.js 20+
-- Docker & Docker Compose
+- **Node.js 20+**
+- **Docker & Docker Compose**
 
 ### Running locally
 ```bash
@@ -33,27 +59,35 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
----
-
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml up --build -d
 ```
 
----
-
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run Predictor & Sync Unit Tests
 npm test
 ```
 
----
+## Repository activity
 
-## 📜 Documentation
+![Activities](https://repobeats.axiom.co/api/embed/iykyk-vedant/OpenAttend-VESIT "Repobeats analytics image")
 
-- [Milestone Roadmap](docs/Milestone.md)
-- [Product Requirements Document (PRD)](docs/PRD.md)
-- [UI Specification](docs/UI.md)
+## Star history
+
+<a href="https://star-history.com/#iykyk-vedant/OpenAttend-VESIT&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date" width="100%" />
+ </picture>
+</a>
+
+## Contributors
+
+<a href="https://github.com/iykyk-vedant/OpenAttend-VESIT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=iykyk-vedant/OpenAttend-VESIT" width="100%"/>
+</a>
