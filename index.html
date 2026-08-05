@@ -1166,46 +1166,190 @@
         </div>
 
         <!-- View 2: Analytics -->
-        <div class="view-pane" id="pane-analytics" style="display: none;">
+        <div class="view-pane" id="pane-analytics" style="display: none; flex-direction: column; gap: 1.5rem;">
           <div class="form-panel">
-            <h3 style="font-size: 1.1rem; font-weight: 600;">Attendance Performance Trends</h3>
-            <p style="color: var(--text-secondary)">Weekly aggregation vs 75% required threshold.</p>
-            <div style="height: 200px; background: var(--bg-surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-family: 'IBM Plex Mono', monospace;">
-              [ Recharts Trend Line: 78% ➔ 80% ➔ 82.4% ]
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 600;">Attendance Performance Trends</h3>
+                <p style="color: var(--text-secondary); font-size: 13px;">Weekly aggregated trend vs 75% required institutional threshold (PRD §2.5).</p>
+              </div>
+              <div class="sub-tabs" style="border: none; padding: 0;">
+                <button class="sub-tab-btn active">Weekly</button>
+                <button class="sub-tab-btn">Monthly</button>
+              </div>
             </div>
+
+            <!-- SVG Trend Line Chart -->
+            <div style="background: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; position: relative;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem;">Overall Attendance % Over Time</div>
+              <svg viewBox="0 0 500 150" style="width: 100%; height: 160px; overflow: visible;">
+                <!-- 75% Threshold Reference Line -->
+                <line x1="0" y1="60" x2="500" y2="60" stroke="var(--state-risk)" stroke-dasharray="4 4" stroke-width="1.5" />
+                <text x="495" y="55" fill="var(--state-risk)" font-size="10" font-weight="600" text-anchor="end">75% Threshold</text>
+                
+                <!-- Trend Curve Line -->
+                <polyline fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                  points="30,85 150,72 275,38 430,48" />
+
+                <!-- Data Points -->
+                <circle cx="30" cy="85" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="30" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W1 (78.0%)</text>
+
+                <circle cx="150" cy="72" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="150" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W2 (79.5%)</text>
+
+                <circle cx="275" cy="38" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="275" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W3 (82.1%)</text>
+
+                <circle cx="430" cy="48" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="430" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W4 (80.2%)</text>
+              </svg>
+            </div>
+
+            <!-- Subject Comparison Bar Chart (Sorted Risk-First) -->
+            <h4 style="font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Subject Comparison & Deltas</h4>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS403 • Database Systems</span>
+                  <span class="font-mono" style="color: var(--state-risk); font-weight: 600;">72.5% <span style="font-size: 11px;">(▼ 2.1%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 72.5%; background: var(--state-risk)"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS402 • Operating Systems</span>
+                  <span class="font-mono" style="color: var(--state-safe); font-weight: 600;">81.8% <span style="font-size: 11px;">(▲ 1.4%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 81.8%; background: var(--state-safe)"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS401 • Data Structures</span>
+                  <span class="font-mono" style="color: var(--state-safe); font-weight: 600;">85.7% <span style="font-size: 11px;">(▲ 0.5%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 85.7%; background: var(--state-safe)"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
         <!-- View 3: Predictor -->
-        <div class="view-pane" id="pane-predictor" style="display: none;">
-          <div class="predictor-callout-card" style="padding: 2rem;">
-            <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;">Attendance Eligibility Calculator</h2>
-            <div class="predictor-sentence" style="font-size: 1.25rem;">
-              You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem;">16</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
+        <div class="view-pane" id="pane-predictor" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel" style="padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700;">Attendance Predictor Sandbox</h2>
+                <p style="color: var(--text-secondary); font-size: 13px;">Interactive calculation engine based on PRD §6.4 formulas.</p>
+              </div>
+              <div class="form-group" style="width: 220px; margin: 0;">
+                <select class="form-select" id="predictor-subject-select" onchange="updatePredictorView(this.value)">
+                  <option value="overall" selected>Overall Attendance</option>
+                  <option value="CS401">CS401 • Data Structures</option>
+                  <option value="CS402">CS402 • Operating Systems</option>
+                  <option value="CS403">CS403 • Database Systems</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Predictor Centerpiece Callout -->
+            <div class="predictor-callout-card" id="predictor-centerpiece" style="padding: 1.75rem; border-radius: 12px; background: var(--accent-dim); border: 1px solid var(--accent);">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 0.5rem;">Status: Safe Above 75%</div>
+              <div class="predictor-sentence" id="predictor-sentence-text" style="font-size: 1.25rem;">
+                You can miss <span class="predictor-num font-mono" id="predictor-skips-val" style="font-size: 1.75rem;">8</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
+              </div>
+            </div>
+
+            <!-- Formula Transparency Panel -->
+            <div class="predictor-formula-panel" style="margin-top: 0.5rem; background: var(--bg-surface-2);">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">🔢 Calculation Breakdown (PRD §6.4 Transparent Formula)</div>
+              <div class="font-mono" id="predictor-formula-breakdown" style="line-height: 1.7; font-size: 12px;">
+                Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>
+                Inputs: P = 101 present, T = 126 total, threshold = 0.75<br>
+                Calculation: (101 - (0.75 × 126)) / 0.75 = (101 - 94.5) / 0.75 = 6.5 / 0.75 = 8 skips
+              </div>
             </div>
           </div>
         </div>
 
         <!-- View 4: History -->
-        <div class="view-pane" id="pane-history" style="display: none;">
-          <div class="roll-call-stack">
-            <div class="roll-call-row">
+        <div class="view-pane" id="pane-history" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <!-- Filter & Export Controls -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1;">
+              <select class="form-select" id="history-filter-subject" style="font-size: 13px;" onchange="filterHistoryTable()">
+                <option value="all">All Subjects</option>
+                <option value="CS401">CS401 • Data Structures</option>
+                <option value="CS402">CS402 • Operating Systems</option>
+                <option value="CS403">CS403 • Database Systems</option>
+              </select>
+              <select class="form-select" id="history-filter-status" style="font-size: 13px;" onchange="filterHistoryTable()">
+                <option value="all">All Statuses</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
+              <input type="text" class="form-input" id="history-search-input" placeholder="Search faculty or remarks..." style="font-size: 13px; min-width: 200px;" oninput="filterHistoryTable()">
+            </div>
+            <button class="btn btn-secondary" onclick="exportHistoryCSV()" style="font-size: 13px; height: 38px;">📥 Export CSV</button>
+          </div>
+
+          <!-- Roll Call Log Table Stack -->
+          <div class="roll-call-stack" id="history-rollcall-stack">
+            <div class="roll-call-row" data-subject="CS401" data-status="Present" data-text="dr rao binary trees">
+              <div class="rc-date font-mono">Aug 05, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Dr. Rao • Lecture 12 - Binary Trees</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS402" data-status="Present" data-text="prof sharma process scheduling">
+              <div class="rc-date font-mono">Aug 04, 2026</div>
+              <div class="rc-subject">CS402 • Operating Systems</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Prof. Sharma • Process Scheduling</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS403" data-status="Absent" data-text="dr patel normalized schemas">
+              <div class="rc-date font-mono">Aug 03, 2026</div>
+              <div class="rc-subject">CS403 • Database Systems</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Absent</span></div>
+              <div class="rc-detail">Dr. Patel • Normalized Schemas</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS401" data-status="Present" data-text="dr rao heap data structures">
               <div class="rc-date font-mono">Aug 02, 2026</div>
               <div class="rc-subject">CS401 • Data Structures</div>
               <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
-              <div class="rc-detail">Lecture 1</div>
+              <div class="rc-detail">Dr. Rao • Heap Data Structures</div>
             </div>
           </div>
         </div>
 
         <!-- View 5: Notifications -->
-        <div class="view-pane" id="pane-notifications" style="display: none;">
+        <div class="view-pane" id="pane-notifications" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Notifications & Alerts</h3>
+            <button class="btn btn-secondary" onclick="markAllNotificationsRead()" style="font-size: 12px; padding: 0.4rem 0.85rem;">✓ Mark All as Read</button>
+          </div>
+
           <div class="roll-call-stack">
+            <div class="roll-call-row" style="background: var(--bg-surface);">
+              <div class="rc-date font-mono">Aug 03, 2026</div>
+              <div class="rc-subject">Threshold Breach Warning</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Warning</span></div>
+              <div class="rc-detail">CS403 dropped to 72.5% — 4 consecutive lectures required</div>
+            </div>
             <div class="roll-call-row">
-              <div class="rc-date font-mono">Aug 01, 2026</div>
-              <div class="rc-subject">Threshold Warning</div>
-              <div class="rc-status"><div class="status-dot dot-warn"></div><span>Warning</span></div>
-              <div class="rc-detail">CS403 dropped below 75% threshold</div>
+              <div class="rc-date font-mono">Aug 05, 2026</div>
+              <div class="rc-subject">Automated Sync Completed</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Sync OK</span></div>
+              <div class="rc-detail">42 records verified cleanly with zero errors</div>
             </div>
           </div>
         </div>
@@ -1431,6 +1575,84 @@
     function testConnection() {
       const panel = document.getElementById('connection-status-panel');
       panel.style.display = 'block';
+    }
+
+    // --- M6 Interactive Helper Functions ---
+    function filterHistoryTable() {
+      const subjectVal = document.getElementById('history-filter-subject').value;
+      const statusVal = document.getElementById('history-filter-status').value;
+      const searchVal = document.getElementById('history-search-input').value.toLowerCase().trim();
+
+      const rows = document.querySelectorAll('#history-rollcall-stack .roll-call-row');
+      rows.forEach(row => {
+        const rowSubject = row.getAttribute('data-subject');
+        const rowStatus = row.getAttribute('data-status');
+        const rowText = row.getAttribute('data-text') || '';
+
+        const matchSubject = subjectVal === 'all' || rowSubject === subjectVal;
+        const matchStatus = statusVal === 'all' || rowStatus === statusVal;
+        const matchSearch = !searchVal || rowText.toLowerCase().includes(searchVal);
+
+        row.style.display = (matchSubject && matchStatus && matchSearch) ? 'flex' : 'none';
+      });
+    }
+
+    function exportHistoryCSV() {
+      const rows = document.querySelectorAll('#history-rollcall-stack .roll-call-row');
+      let csvContent = 'Date,Subject,Status,Details\n';
+
+      rows.forEach(row => {
+        if (row.style.display !== 'none') {
+          const date = row.querySelector('.rc-date').textContent.trim();
+          const subject = row.querySelector('.rc-subject').textContent.trim();
+          const status = row.querySelector('.rc-status span').textContent.trim();
+          const detail = row.querySelector('.rc-detail').textContent.trim().replace(/,/g, ' -');
+          csvContent += `"${date}","${subject}","${status}","${detail}"\n`;
+        }
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `openattend-history-${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function updatePredictorView(subjectCode) {
+      const centerpiece = document.getElementById('predictor-centerpiece');
+      const textEl = document.getElementById('predictor-sentence-text');
+      const breakdownEl = document.getElementById('predictor-formula-breakdown');
+
+      const data = {
+        'overall': { present: 101, total: 126, threshold: 0.75, status: 'SAFE', skips: 8, must: 0 },
+        'CS401': { present: 36, total: 42, threshold: 0.75, status: 'SAFE', skips: 6, must: 0 },
+        'CS402': { present: 36, total: 44, threshold: 0.75, status: 'SAFE', skips: 4, must: 0 },
+        'CS403': { present: 29, total: 40, threshold: 0.75, status: 'RISK', skips: 0, must: 4 }
+      };
+
+      const sel = data[subjectCode] || data['overall'];
+
+      if (sel.status === 'SAFE') {
+        centerpiece.style.background = 'var(--accent-dim)';
+        centerpiece.style.borderColor = 'var(--accent)';
+        textEl.innerHTML = `You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-safe);">${sel.skips}</span> more consecutive lectures while keeping attendance above <strong>75%</strong>.`;
+        breakdownEl.innerHTML = `Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: (${sel.present} - (0.75 × ${sel.total})) / 0.75 = ${sel.skips} skips remaining`;
+      } else {
+        centerpiece.style.background = 'rgba(214, 69, 69, 0.12)';
+        centerpiece.style.borderColor = 'var(--state-risk)';
+        textEl.innerHTML = `You must attend <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-risk);">${sel.must}</span> consecutive lectures to reach <strong>75%</strong> threshold.`;
+        breakdownEl.innerHTML = `Formula: Must Attend = ceil(((threshold × T) - P) / (1 - threshold))<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: ((0.75 × ${sel.total}) - ${sel.present}) / (1 - 0.75) = ${sel.must} lectures required`;
+      }
+    }
+
+    function markAllNotificationsRead() {
+      fetch('/api/v1/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+      document.querySelectorAll('#pane-notifications .roll-call-row').forEach(row => {
+        row.style.opacity = '0.65';
+      });
     }
 
     let currentAuthRole = 'STUDENT';

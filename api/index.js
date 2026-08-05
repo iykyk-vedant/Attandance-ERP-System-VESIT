@@ -205,12 +205,65 @@ export default async function handler(req, res) {
       return sendJson(res, 200, {
         success: true,
         history: [
-          { date: '2026-08-05', subject: 'CS401 • Data Structures', status: 'Present', faculty: 'Dr. Rao' },
-          { date: '2026-08-04', subject: 'CS402 • Operating Systems', status: 'Present', faculty: 'Prof. Sharma' },
-          { date: '2026-08-03', subject: 'CS403 • Database Systems', status: 'Absent', faculty: 'Dr. Patel' },
-          { date: '2026-08-02', subject: 'CS401 • Data Structures', status: 'Present', faculty: 'Dr. Rao' }
+          { date: '2026-08-05', subject: 'CS401', subjectName: 'Data Structures & Algorithms', status: 'Present', faculty: 'Dr. Rao', remarks: 'Lecture 12 - Binary Trees' },
+          { date: '2026-08-04', subject: 'CS402', subjectName: 'Operating Systems', status: 'Present', faculty: 'Prof. Sharma', remarks: 'Process Scheduling' },
+          { date: '2026-08-03', subject: 'CS403', subjectName: 'Database Management Systems', status: 'Absent', faculty: 'Dr. Patel', remarks: 'Normalized Schemas' },
+          { date: '2026-08-02', subject: 'CS401', subjectName: 'Data Structures & Algorithms', status: 'Present', faculty: 'Dr. Rao', remarks: 'Heap Data Structures' },
+          { date: '2026-08-01', subject: 'CS402', subjectName: 'Operating Systems', status: 'Present', faculty: 'Prof. Sharma', remarks: 'Virtual Memory' },
+          { date: '2026-07-31', subject: 'CS403', subjectName: 'Database Management Systems', status: 'Present', faculty: 'Dr. Patel', remarks: 'SQL Indexes & B-Trees' }
         ]
       });
+    }
+
+    // Attendance Analytics Endpoint
+    if (url.includes('/attendance/analytics') && req.method === 'GET') {
+      return sendJson(res, 200, {
+        success: true,
+        weeklyTrends: [
+          { period: 'Week 1', pct: 78.0 },
+          { period: 'Week 2', pct: 79.5 },
+          { period: 'Week 3', pct: 82.1 },
+          { period: 'Week 4', pct: 80.2 }
+        ],
+        subjectComparison: [
+          { code: 'CS403', name: 'Database Systems', pct: 72.5, delta: -2.1, status: 'RISK' },
+          { code: 'CS402', name: 'Operating Systems', pct: 81.8, delta: +1.4, status: 'SAFE' },
+          { code: 'CS401', name: 'Data Structures', pct: 85.7, delta: +0.5, status: 'SAFE' }
+        ]
+      });
+    }
+
+    // Notifications Endpoints
+    if (url.includes('/notifications') && req.method === 'GET') {
+      return sendJson(res, 200, {
+        success: true,
+        notifications: [
+          {
+            id: 'notif_1',
+            type: 'threshold_breach',
+            title: 'Attendance Threshold Warning',
+            message: 'CS403 (Database Systems) has fallen to 72.5% — 4 consecutive lectures required to recover.',
+            date: '2026-08-03T10:15:00Z',
+            read: false
+          },
+          {
+            id: 'notif_2',
+            type: 'sync_update',
+            title: 'Automated Sync Completed',
+            message: 'Latest worksheet sync finished cleanly: 42 records verified with zero errors.',
+            date: '2026-08-05T09:00:00Z',
+            read: true
+          }
+        ]
+      });
+    }
+
+    if (url.includes('/notifications/') && req.method === 'PATCH') {
+      return sendJson(res, 200, { success: true, message: 'Notification marked as read' });
+    }
+
+    if (url.includes('/notifications/read-all') && req.method === 'PATCH') {
+      return sendJson(res, 200, { success: true, message: 'All notifications marked as read' });
     }
 
     return sendJson(res, 404, { success: false, error: 'API Endpoint Not Found' });
