@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenAttend — Live Companion Platform for VESIT Attendance</title>
+  <!-- PWA & Mobile Web App Settings -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2F6F5E">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OpenAttend">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%232F6F5E'/><text x='50' y='65' font-size='50' font-weight='bold' text-anchor='middle' fill='white'>✓</text></svg>">
+  <style>
+    :root[data-theme="light"] {
+      --bg-base:        #FAFAF8;
+      --bg-surface:     #FFFFFF;
+      --bg-surface-2:   #F2F1EC;
+      --border-subtle:  #E7E5DE;
+      --border-strong:  #D3D0C6;
+      --text-primary:   #1C1B18;
+      --text-secondary: #6B6A62;
+      --text-tertiary:  #A3A199;
+      --accent:         #2F6F5E;
+      --accent-dim:     #E4EFEB;
+      --state-safe:     #2F9E6E;
+      --state-risk:     #D64545;
+      --state-warn:     #C98A1E;
+      --state-neutral:  #8B897F;
+      --shadow-sm:      0 2px 8px rgba(28, 27, 24, 0.04);
+      --shadow-md:      0 4px 16px rgba(28, 27, 24, 0.08);
+    }
+
+    :root[data-theme="dark"] {
+      --bg-base:        #14161A;
+      --bg-surface:     #1B1E23;
+      --bg-surface-2:   #22262C;
+      --border-subtle:  #2B3038;
+      --border-strong:  #3A424C;
+      --text-primary:   #ECEBE6;
+      --text-secondary: #9B9A92;
+      --text-tertiary:  #6B6A62;
+      --accent:         #5FBFA6;
+      --accent-dim:     #1E2E29;
+      --state-safe:     #4ADE94;
+      --state-risk:     #F27272;
+      --state-warn:     #E0AA46;
+      --state-neutral:  #6E7178;
+      --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 14px;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* App Layout */
+    .app-shell {
+      display: flex;
+      width: 100vw;
+      min-height: 100vh;
+    }
+
+    /* Left Sidebar */
+    aside.sidebar {
+      width: 240px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1rem;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 50;
+      transition: width 0.2s ease;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0.5rem 1.5rem 0.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+    }
+
+    .nav-section {
+      margin-top: 1.25rem;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-tertiary);
+      padding: 0 0.5rem 0.5rem 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-surface-2);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .role-switcher {
+      display: flex;
+      background: var(--bg-surface-2);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 0.75rem;
+    }
+
+    .role-btn {
+      flex: 1;
+      padding: 0.4rem 0.5rem;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .role-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Main Area */
+    main.main-content {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Top Bar */
+    header.topbar {
+      height: 60px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .page-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    /* SyncPulse Indicator */
+    .sync-pulse-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--bg-surface-2);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--state-safe);
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .theme-toggle-btn {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* View Container */
+    .content-viewport {
+      padding: 2rem;
+      max-width: 1140px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .view-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    /* Signature Components */
+    /* 1. Percentage Ring Hero */
+    .hero-ring-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ring-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .ring-center-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+    }
+
+    .ring-center-val {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    .ring-center-lbl {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .hero-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .student-info-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .student-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .badge-chip {
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--bg-surface-2);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .stats-kpi-grid {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .kpi-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-num {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 2. Predictor Callout */
+    .predictor-callout-card {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .predictor-sentence {
+      font-size: 1.1rem;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .predictor-num {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .predictor-formula-toggle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-top: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: underline;
+    }
+
+    .predictor-formula-panel {
+      margin-top: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* 3. RollCallRow Component */
+    .roll-call-stack {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .roll-call-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.15s ease;
+    }
+
+    .roll-call-row:last-child {
+      border-bottom: none;
+    }
+
+    .roll-call-row:hover {
+      background: var(--bg-surface-2);
+    }
+
+    .rc-date {
+      width: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .rc-subject {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .rc-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 110px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot-safe { background: var(--state-safe); }
+    .dot-risk { background: var(--state-risk); }
+    .dot-warn { background: var(--state-warn); }
+    .dot-neutral { background: var(--state-neutral); }
+
+    .rc-detail {
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+
+    /* Subject Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .subject-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+    }
+
+    .subject-card.risk-border {
+      border-left: 3px solid var(--state-risk);
+    }
+
+    .subject-card.safe-border {
+      border-left: 3px solid var(--state-safe);
+    }
+
+    .sc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .sc-code {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .sc-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .sc-pct {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .sc-progress-bar {
+      height: 6px;
+      background: var(--bg-surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .sc-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .sc-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Forms & Admin Component Styles */
+    .form-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .form-input, .form-select {
+      background: var(--bg-base);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-subtle);
+    }
+
+    .btn-danger {
+      background: var(--state-risk);
+      color: #FFFFFF;
+    }
+
+    /* Live Column Role Mapping Preview Table */
+    .column-preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .column-preview-table th {
+      background: var(--bg-surface-2);
+      padding: 0.75rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .column-preview-table td {
+      padding: 0.75rem;
+      border: 1px solid var(--border-subtle);
+      font-size: 13px;
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tab-chip {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Tab navigation sub-bar */
+    .sub-tabs {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+    }
+
+    .sub-tab-btn {
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .sub-tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Glassmorphic Login Modal & Auth Overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 17, 21, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 1;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .auth-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 440px;
+      padding: 2.25rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      animation: auth-card-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes auth-card-pop {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .auth-header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .auth-logo-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 0.25rem;
+      box-shadow: 0 4px 12px rgba(47, 111, 94, 0.3);
+    }
+
+    .auth-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--bg-surface-2);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 0.55rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .auth-alert {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .auth-alert-error {
+      background: rgba(214, 69, 69, 0.1);
+      border: 1px solid var(--state-risk);
+      color: var(--state-risk);
+    }
+
+    .quick-demo-section {
+      background: var(--bg-surface-2);
+      border: 1px dashed var(--border-strong);
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .quick-demo-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      letter-spacing: 0.5px;
+    }
+
+    .quick-chips {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .quick-chip-btn {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem;
+      font-size: 12px;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .quick-chip-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Sidebar Profile Bar */
+    .user-profile-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      margin-top: auto;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .user-avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .user-display-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role-badge {
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text-secondary);
+    }
+
+    .logout-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .logout-action-btn:hover {
+      color: var(--state-risk);
+      background: var(--bg-surface-2);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      aside.sidebar { width: 100%; height: 60px; top: auto; bottom: 0; border-right: none; border-top: 1px solid var(--border-subtle); flex-direction: row; padding: 0 1rem; }
+      main.main-content { margin-left: 0; margin-bottom: 60px; }
+      .brand-header, .nav-section-title, .sidebar-footer, .user-profile-bar { display: none; }
+      .nav-section { display: flex; width: 100%; justify-content: space-around; margin: 0; }
+      .hero-ring-card { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon">✓</div>
+        <span class="brand-title">OpenAttend</span>
+      </div>
+
+      <!-- Student Navigation Group -->
+      <div class="nav-section" id="student-nav-group">
+        <div class="nav-section-title">STUDENT</div>
+        <div class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> Dashboard</div>
+        <div class="nav-item" onclick="switchView('analytics', this)"><span>📈</span> Analytics</div>
+        <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
+        <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
+        <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+      </div>
+
+      <!-- Admin Navigation Group (Shown in Admin Mode) -->
+      <div class="nav-section" id="admin-nav-group" style="display: none;">
+        <div class="nav-section-title">SETUP</div>
+        <div class="nav-item" onclick="switchView('admin-sheet', this)"><span>🔗</span> Sheet Connection</div>
+        <div class="nav-item" onclick="switchView('admin-mapping', this)"><span>🗺️</span> Worksheet Mapping</div>
+        <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Roster Import</div>
+        <div class="nav-section-title" style="margin-top: 1rem;">OPERATIONS</div>
+        <div class="nav-item" onclick="switchView('admin-sync', this)"><span>🔄</span> Sync Control</div>
+        <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Sync Logs</div>
+      </div>
+
+      <!-- Sidebar User Profile Bar -->
+      <div class="user-profile-bar" id="user-profile-bar" style="display: none;">
+        <div class="user-avatar-circle" id="user-avatar-initials">VG</div>
+        <div class="user-details">
+          <div class="user-display-name" id="user-name-display">Vedant Gharat</div>
+          <div class="user-role-badge" id="user-role-display">STUDENT • 2024CS01</div>
+        </div>
+        <button class="logout-action-btn" title="Sign Out" onclick="handleLogout()">🚪</button>
+      </div>
+
+      <!-- Sidebar Footer with Role Switcher -->
+      <div class="sidebar-footer">
+        <div class="role-switcher">
+          <button class="role-btn active" id="btn-role-student" onclick="toggleRole('STUDENT')">Student View</button>
+          <button class="role-btn" id="btn-role-admin" onclick="toggleRole('ADMIN')">Admin View</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Glassmorphic Login Overlay Modal -->
+    <div class="auth-overlay" id="auth-modal">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo-badge">✓</div>
+          <h2 class="auth-title">Welcome to OpenAttend</h2>
+          <p class="auth-subtitle">Sign in with your official VESIT email address (<span style="font-family: monospace;">@ves.ac.in</span>)</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="auth-tab-student" onclick="switchAuthTab('STUDENT')">🎓 Student Login</button>
+          <button class="auth-tab-btn" id="auth-tab-admin" onclick="switchAuthTab('ADMIN')">⚡ Admin Login</button>
+        </div>
+
+        <div class="auth-alert auth-alert-error" id="auth-error-alert">
+          <span>⚠️</span>
+          <span id="auth-error-text">Invalid email or password</span>
+        </div>
+
+        <form id="auth-login-form" onsubmit="submitAuthLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="auth-email-input">Official Email Address</label>
+            <input type="email" id="auth-email-input" class="form-input" placeholder="student@ves.ac.in" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="auth-password-input">Password</label>
+            <input type="password" id="auth-password-input" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width: 100%; padding: 0.75rem; font-size: 14px; margin-top: 0.25rem;">
+            Sign In to Dashboard →
+          </button>
+        </form>
+
+        <div class="quick-demo-section">
+          <div class="quick-demo-title">⚡ Instant Demo 1-Click Fill:</div>
+          <div class="quick-chips">
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('STUDENT')">
+              <span>🎓</span> Student Demo
+            </button>
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('ADMIN')">
+              <span>⚡</span> Admin Demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Bar -->
+      <header class="topbar">
+        <h1 class="page-title" id="view-title">Student Dashboard</h1>
+        <div class="topbar-right">
+          <div class="sync-pulse-bar">
+            <div class="pulse-dot"></div>
+            <span id="sync-pulse-text">Synced 4m ago • Google Sheets API</span>
+          </div>
+          <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
+        </div>
+      </header>
+
+      <!-- View Container -->
+      <div class="content-viewport" id="viewport">
+        
+        <!-- View 1: Student Dashboard -->
+        <div class="view-pane" id="pane-dashboard">
+          
+          <!-- Hero Card: Percentage Ring -->
+          <div class="hero-ring-card">
+            <div class="ring-wrapper">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-surface-2)" stroke-width="10" />
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--state-safe)" stroke-width="10" stroke-dasharray="377" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 70 70)" />
+              </svg>
+              <div class="ring-center-text">
+                <div class="ring-center-val font-mono">82.4%</div>
+                <div class="ring-center-lbl">Overall</div>
+              </div>
+            </div>
+            <div class="hero-metrics">
+              <div class="student-info-row">
+                <span class="student-name">Vedant Sharma</span>
+                <span class="badge-chip">Roll: 2024CS01</span>
+              </div>
+              <div class="stats-kpi-grid">
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono" style="color: var(--state-safe)">141</span>
+                  <span class="kpi-label">Present</span>
+                </div>
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono" style="color: var(--state-risk)">30</span>
+                  <span class="kpi-label">Absent</span>
+                </div>
+                <div class="kpi-item">
+                  <span class="kpi-num font-mono">171</span>
+                  <span class="kpi-label">Total Conducted</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predictor Callout Component -->
+          <div class="predictor-callout-card">
+            <div class="predictor-sentence">
+              You can safely miss <span class="predictor-num font-mono">16</span> consecutive lectures overall while maintaining attendance above the mandatory <strong>75%</strong> threshold.
+            </div>
+            <div class="predictor-formula-toggle" onclick="toggleFormula('formula-dash')">
+              ▶ How is this calculated?
+            </div>
+            <div class="predictor-formula-panel" id="formula-dash" style="display: none;">
+              <code>Safe Skips S = floor((Present - threshold * Total) / threshold)</code><br>
+              Plugging in: floor((141 - 0.75 * 171) / 0.75) = floor((141 - 128.25) / 0.75) = <strong>16 lectures</strong>.
+            </div>
+          </div>
+
+          <!-- Subject Cards Grid -->
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Subject Wise Breakdown</h2>
+          <div class="cards-grid">
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS401</div>
+                  <div class="sc-title">Data Structures & Algorithms</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">85.7%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 85.7%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 42 Lectures</span>
+                <span>Safe Skips: 6</span>
+              </div>
+            </div>
+
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS402</div>
+                  <div class="sc-title">Operating Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">81.8%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 81.8%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 44 Lectures</span>
+                <span>Safe Skips: 4</span>
+              </div>
+            </div>
+
+            <div class="subject-card risk-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS403</div>
+                  <div class="sc-title">Database Management Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-risk)">72.5%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 72.5%; background: var(--state-risk)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>29 / 40 Lectures</span>
+                <span style="color: var(--state-risk); font-weight: 600">Must attend: 2</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Atomic RollCallRow Stack -->
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Recent Roll Call Log</h2>
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Dr. Rao</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS402 • Operating Systems</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Prof. Patil</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 01, 2026</div>
+              <div class="rc-subject">CS403 • Database Systems</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Absent</span></div>
+              <div class="rc-detail">Faculty: Dr. Sharma</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 2: Analytics -->
+        <div class="view-pane" id="pane-analytics" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="font-size: 1.15rem; font-weight: 600;">Attendance Performance Trends</h3>
+                <p style="color: var(--text-secondary); font-size: 13px;">Weekly aggregated trend vs 75% required institutional threshold (PRD §2.5).</p>
+              </div>
+              <div class="sub-tabs" style="border: none; padding: 0;">
+                <button class="sub-tab-btn active">Weekly</button>
+                <button class="sub-tab-btn">Monthly</button>
+              </div>
+            </div>
+
+            <!-- SVG Trend Line Chart -->
+            <div style="background: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; position: relative;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem;">Overall Attendance % Over Time</div>
+              <svg viewBox="0 0 500 150" style="width: 100%; height: 160px; overflow: visible;">
+                <!-- 75% Threshold Reference Line -->
+                <line x1="0" y1="60" x2="500" y2="60" stroke="var(--state-risk)" stroke-dasharray="4 4" stroke-width="1.5" />
+                <text x="495" y="55" fill="var(--state-risk)" font-size="10" font-weight="600" text-anchor="end">75% Threshold</text>
+                
+                <!-- Trend Curve Line -->
+                <polyline fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                  points="30,85 150,72 275,38 430,48" />
+
+                <!-- Data Points -->
+                <circle cx="30" cy="85" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="30" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W1 (78.0%)</text>
+
+                <circle cx="150" cy="72" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="150" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W2 (79.5%)</text>
+
+                <circle cx="275" cy="38" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="275" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W3 (82.1%)</text>
+
+                <circle cx="430" cy="48" r="5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2" />
+                <text x="430" y="110" fill="var(--text-tertiary)" font-size="11" text-anchor="middle">W4 (80.2%)</text>
+              </svg>
+            </div>
+
+            <!-- Subject Comparison Bar Chart (Sorted Risk-First) -->
+            <h4 style="font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Subject Comparison & Deltas</h4>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS403 • Database Systems</span>
+                  <span class="font-mono" style="color: var(--state-risk); font-weight: 600;">72.5% <span style="font-size: 11px;">(▼ 2.1%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 72.5%; background: var(--state-risk)"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS402 • Operating Systems</span>
+                  <span class="font-mono" style="color: var(--state-safe); font-weight: 600;">81.8% <span style="font-size: 11px;">(▲ 1.4%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 81.8%; background: var(--state-safe)"></div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span style="font-weight: 600;">CS401 • Data Structures</span>
+                  <span class="font-mono" style="color: var(--state-safe); font-weight: 600;">85.7% <span style="font-size: 11px;">(▲ 0.5%)</span></span>
+                </div>
+                <div class="sc-progress-bar" style="height: 10px;">
+                  <div class="sc-progress-fill" style="width: 85.7%; background: var(--state-safe)"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- View 3: Predictor -->
+        <div class="view-pane" id="pane-predictor" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel" style="padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700;">Attendance Predictor Sandbox</h2>
+                <p style="color: var(--text-secondary); font-size: 13px;">Interactive calculation engine based on PRD §6.4 formulas.</p>
+              </div>
+              <div class="form-group" style="width: 220px; margin: 0;">
+                <select class="form-select" id="predictor-subject-select" onchange="updatePredictorView(this.value)">
+                  <option value="overall" selected>Overall Attendance</option>
+                  <option value="CS401">CS401 • Data Structures</option>
+                  <option value="CS402">CS402 • Operating Systems</option>
+                  <option value="CS403">CS403 • Database Systems</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Predictor Centerpiece Callout -->
+            <div class="predictor-callout-card" id="predictor-centerpiece" style="padding: 1.75rem; border-radius: 12px; background: var(--accent-dim); border: 1px solid var(--accent);">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 0.5rem;">Status: Safe Above 75%</div>
+              <div class="predictor-sentence" id="predictor-sentence-text" style="font-size: 1.25rem;">
+                You can miss <span class="predictor-num font-mono" id="predictor-skips-val" style="font-size: 1.75rem;">8</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
+              </div>
+            </div>
+
+            <!-- Formula Transparency Panel -->
+            <div class="predictor-formula-panel" style="margin-top: 0.5rem; background: var(--bg-surface-2);">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">🔢 Calculation Breakdown (PRD §6.4 Transparent Formula)</div>
+              <div class="font-mono" id="predictor-formula-breakdown" style="line-height: 1.7; font-size: 12px;">
+                Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>
+                Inputs: P = 101 present, T = 126 total, threshold = 0.75<br>
+                Calculation: (101 - (0.75 × 126)) / 0.75 = (101 - 94.5) / 0.75 = 6.5 / 0.75 = 8 skips
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 4: History -->
+        <div class="view-pane" id="pane-history" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <!-- Filter & Export Controls -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1;">
+              <select class="form-select" id="history-filter-subject" style="font-size: 13px;" onchange="filterHistoryTable()">
+                <option value="all">All Subjects</option>
+                <option value="CS401">CS401 • Data Structures</option>
+                <option value="CS402">CS402 • Operating Systems</option>
+                <option value="CS403">CS403 • Database Systems</option>
+              </select>
+              <select class="form-select" id="history-filter-status" style="font-size: 13px;" onchange="filterHistoryTable()">
+                <option value="all">All Statuses</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
+              <input type="text" class="form-input" id="history-search-input" placeholder="Search faculty or remarks..." style="font-size: 13px; min-width: 200px;" oninput="filterHistoryTable()">
+            </div>
+            <button class="btn btn-secondary" onclick="exportHistoryCSV()" style="font-size: 13px; height: 38px;">📥 Export CSV</button>
+          </div>
+
+          <!-- Roll Call Log Table Stack -->
+          <div class="roll-call-stack" id="history-rollcall-stack">
+            <div class="roll-call-row" data-subject="CS401" data-status="Present" data-text="dr rao binary trees">
+              <div class="rc-date font-mono">Aug 05, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Dr. Rao • Lecture 12 - Binary Trees</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS402" data-status="Present" data-text="prof sharma process scheduling">
+              <div class="rc-date font-mono">Aug 04, 2026</div>
+              <div class="rc-subject">CS402 • Operating Systems</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Prof. Sharma • Process Scheduling</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS403" data-status="Absent" data-text="dr patel normalized schemas">
+              <div class="rc-date font-mono">Aug 03, 2026</div>
+              <div class="rc-subject">CS403 • Database Systems</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Absent</span></div>
+              <div class="rc-detail">Dr. Patel • Normalized Schemas</div>
+            </div>
+            <div class="roll-call-row" data-subject="CS401" data-status="Present" data-text="dr rao heap data structures">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Dr. Rao • Heap Data Structures</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 5: Notifications -->
+        <div class="view-pane" id="pane-notifications" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Notifications & Alerts</h3>
+            <button class="btn btn-secondary" onclick="markAllNotificationsRead()" style="font-size: 12px; padding: 0.4rem 0.85rem;">✓ Mark All as Read</button>
+          </div>
+
+          <div class="roll-call-stack">
+            <div class="roll-call-row" style="background: var(--bg-surface);">
+              <div class="rc-date font-mono">Aug 03, 2026</div>
+              <div class="rc-subject">Threshold Breach Warning</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Warning</span></div>
+              <div class="rc-detail">CS403 dropped to 72.5% — 4 consecutive lectures required</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 05, 2026</div>
+              <div class="rc-subject">Automated Sync Completed</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Sync OK</span></div>
+              <div class="rc-detail">42 records verified cleanly with zero errors</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 1: Sheet Connection Form -->
+        <div class="view-pane" id="pane-admin-sheet" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Connect Google Sheet</h2>
+            <p style="color: var(--text-secondary);">Configure the read-only Google Sheet ID and service account permissions (PRD §2.8).</p>
+            
+            <div class="form-group">
+              <label class="form-label">Google Sheet ID</label>
+              <input type="text" class="form-input font-mono" value="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms" placeholder="Enter Spreadsheet ID">
+              <span class="form-hint">Found in your Google Sheet URL: /spreadsheets/d/<strong>[SHEET_ID]</strong>/edit</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Service Account Email (Read-Only)</label>
+              <input type="text" class="form-input font-mono" value="sync@openattend.iam.gserviceaccount.com" readonly style="opacity: 0.7;">
+              <span class="form-hint">Share your spreadsheet with Viewer access to this email address.</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="testConnection()">⚡ Test Connection</button>
+
+            <div id="connection-status-panel" style="margin-top: 1rem; display: none;">
+              <div style="background: rgba(47, 158, 110, 0.12); border: 1px solid var(--state-safe); color: var(--state-safe); padding: 1rem; border-radius: 8px;">
+                <strong>✅ Sheet Connection Verified!</strong>
+                <p style="font-size: 12px; margin-top: 4px; color: var(--text-primary);">Spreadsheet Title: "VESIT Attendance 2026"</p>
+                <div style="margin-top: 0.75rem; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Detected Worksheet Tabs:</div>
+                <div class="chips-row">
+                  <span class="tab-chip">Student List</span>
+                  <span class="tab-chip">CS401</span>
+                  <span class="tab-chip">CS402</span>
+                  <span class="tab-chip">CS403</span>
+                  <span class="tab-chip">Defaulters</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 2: Worksheet Mapping Form with Live Preview -->
+        <div class="view-pane" id="pane-admin-mapping" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Worksheet Mapping Setup</h2>
+            <p style="color: var(--text-secondary);">Assign column roles with a live row preview before saving (PRD §11.2).</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Subject Code</label>
+                <select class="form-select">
+                  <option>CS401 — Data Structures</option>
+                  <option>CS402 — Operating Systems</option>
+                  <option>CS403 — Database Systems</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Worksheet Tab</label>
+                <select class="form-select">
+                  <option>CS401</option>
+                  <option>CS402</option>
+                  <option>CS403</option>
+                </select>
+              </div>
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Live Column Role Preview</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">Match each column in the spreadsheet to its entity role:</p>
+
+            <table class="column-preview-table">
+              <thead>
+                <tr>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Date (Col A)</option>
+                      <option>Role: Roll No</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option selected>Role: Roll No (Col B)</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option>Role: Roll No</option>
+                      <option selected>Role: Status (Col C)</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Faculty (Col D)</option>
+                    </select>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS01</td>
+                  <td>Present</td>
+                  <td>Dr. Rao</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS02</td>
+                  <td>Absent</td>
+                  <td>Dr. Rao</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <button class="btn btn-primary" style="margin-top: 1rem; align-self: flex-start;">💾 Save Worksheet Mapping</button>
+          </div>
+        </div>
+
+        <!-- Admin View 3: Roster Import Form with Pre-Commit Preview -->
+        <div class="view-pane" id="pane-admin-roster" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Student Roster Import</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Upload student CSV roster to preview record diffs before committing to database (PRD §8.9).</p>
+
+            <div style="border: 2px dashed var(--border-strong); border-radius: 12px; padding: 2rem; text-align: center; background: var(--bg-surface-2);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+              <div style="font-weight: 600;">Drag & Drop Roster CSV File</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Columns: RollNo, Name, Email, Division, Batch</div>
+              <button class="btn btn-secondary" onclick="previewRosterCSV()" style="margin-top: 1rem;">⚡ Load Sample Roster Preview</button>
+            </div>
+
+            <!-- Pre-Commit Diff Preview Table -->
+            <div id="roster-preview-panel" style="display: none; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-2); padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <span style="font-weight: 600; font-size: 13px;">Pre-Commit Diff Summary: 4 Total Rows</span>
+                <div style="display: flex; gap: 0.5rem; font-size: 11px; font-weight: 700;">
+                  <span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 8px; border-radius: 4px;">2 Create</span>
+                  <span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 8px; border-radius: 4px;">1 Update</span>
+                  <span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px;">1 Error</span>
+                </div>
+              </div>
+
+              <table class="column-preview-table" style="font-size: 12px;">
+                <thead>
+                  <tr style="text-align: left;">
+                    <th>Action</th>
+                    <th>Roll No</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Validation Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS04</td>
+                    <td>Aarav Sharma</td>
+                    <td class="font-mono">aarav.sharma@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS05</td>
+                    <td>Ananya Iyer</td>
+                    <td class="font-mono">ananya.iyer@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 6px; border-radius: 4px; font-weight: 700;">UPDATE</span></td>
+                    <td class="font-mono">2024CS01</td>
+                    <td>Vedant Gharat</td>
+                    <td class="font-mono">vedant.gharat@ves.ac.in</td>
+                    <td style="color: var(--state-warn);">Existing roll number (metadata update)</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 6px; border-radius: 4px; font-weight: 700;">ERROR</span></td>
+                    <td class="font-mono">INVALID</td>
+                    <td>Rohan Mehta</td>
+                    <td class="font-mono">rohan@gmail.com</td>
+                    <td style="color: var(--state-risk);">Invalid domain (must end with @ves.ac.in)</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <button class="btn btn-primary" onclick="commitRosterImport()" style="align-self: flex-start;">💾 Confirm & Commit 3 Valid Rows</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 4: Sync Control Form & Cooldown -->
+        <div class="view-pane" id="pane-admin-sync" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Sync Control & Frequency</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Manage background automated polling frequency and trigger manual runs with rate-limit cooldowns (PRD §8.7).</p>
+
+            <div class="form-group">
+              <label class="form-label">Polling Interval Frequency</label>
+              <select class="form-select" style="max-width: 300px;">
+                <option selected>Every 15 Minutes (Default)</option>
+                <option>Every 5 Minutes</option>
+                <option>Every 1 Hour</option>
+              </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btn-trigger-sync" onclick="triggerManualSync()">⚡ Trigger Immediate Sync Run</button>
+              <div id="sync-cooldown-timer" style="display: none; font-size: 12px; font-weight: 600; color: var(--state-warn); background: rgba(201, 138, 30, 0.12); padding: 0.4rem 0.85rem; border-radius: 6px;">
+                ⏳ Rate limit cooldown active: Please wait <span id="cooldown-seconds">60</span>s before re-triggering.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 5: Sync Logs with Expandable Details -->
+        <div class="view-pane" id="pane-admin-logs" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 600;">System Sync Logs</h3>
+              <p style="color: var(--text-secondary); font-size: 12px;">Detailed audit log of background sync runs and itemized skip reasons (PRD §11.4).</p>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshAdminLogs()" style="font-size: 12px;">🔄 Refresh Logs</button>
+          </div>
+
+          <div class="roll-call-stack" id="admin-sync-logs-list">
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-1')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">14:00:25</div>
+                <div class="rc-subject">CS401 • Data Structures</div>
+                <div class="rc-status"><div class="status-dot dot-safe"></div><span>SKIPPED</span></div>
+                <div class="rc-detail">42 Rows Read • 0 Upserted</div>
+              </div>
+              <div id="log-detail-1" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--text-secondary);" class="font-mono">
+                Run Status: SKIPPED_NO_CHANGE<br>
+                Content Hash: 8f4a21b3... SHA-256<br>
+                Detail: Range hash matched existing check; zero changes detected.
+              </div>
+            </div>
+
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-2')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">13:45:10</div>
+                <div class="rc-subject">CS403 • Database Systems</div>
+                <div class="rc-status"><div class="status-dot dot-warn"></div><span>PARTIAL</span></div>
+                <div class="rc-detail">40 Rows Read • 38 Upserted</div>
+              </div>
+              <div id="log-detail-2" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--state-warn);" class="font-mono">
+                Run Status: PARTIAL_FAILURE<br>
+                Itemized Skip Reasons:<br>
+                - Row 14: Invalid date format ("invalid-date")<br>
+                - Row 27: Roll number "2024CS99" not found in student roster
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+    }
+
+    function toggleRole(role) {
+      const studentNav = document.getElementById('student-nav-group');
+      const adminNav = document.getElementById('admin-nav-group');
+      const btnStudent = document.getElementById('btn-role-student');
+      const btnAdmin = document.getElementById('btn-role-admin');
+
+      if (role === 'ADMIN') {
+        studentNav.style.display = 'none';
+        adminNav.style.display = 'block';
+        btnStudent.classList.remove('active');
+        btnAdmin.classList.add('active');
+        switchView('admin-sheet', adminNav.querySelector('.nav-item'));
+      } else {
+        adminNav.style.display = 'none';
+        studentNav.style.display = 'block';
+        btnAdmin.classList.remove('active');
+        btnStudent.classList.add('active');
+        switchView('dashboard', studentNav.querySelector('.nav-item'));
+      }
+    }
+
+    function switchView(viewId, el) {
+      document.querySelectorAll('.view-pane').forEach(pane => pane.style.display = 'none');
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      
+      const targetPane = document.getElementById('pane-' + viewId);
+      if (targetPane) targetPane.style.display = 'flex';
+      if (el) el.classList.add('active');
+
+      const titles = {
+        'dashboard': 'Student Dashboard',
+        'analytics': 'Attendance Analytics',
+        'predictor': 'Attendance Predictor',
+        'history': 'Attendance History',
+        'notifications': 'Notifications',
+        'admin-sheet': 'Admin — Sheet Connection',
+        'admin-mapping': 'Admin — Worksheet Mapping',
+        'admin-roster': 'Admin — Roster Import',
+        'admin-sync': 'Admin — Sync Control',
+        'admin-logs': 'Admin — Sync Logs'
+      };
+      document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
+    }
+
+    function toggleFormula(id) {
+      const panel = document.getElementById(id);
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function testConnection() {
+      const panel = document.getElementById('connection-status-panel');
+      panel.style.display = 'block';
+    }
+
+    // --- M7 Admin Helper Functions ---
+    function previewRosterCSV() {
+      const panel = document.getElementById('roster-preview-panel');
+      panel.style.display = 'flex';
+    }
+
+    function commitRosterImport() {
+      alert('✅ Student roster import committed: 2 new students created, 1 updated.');
+      document.getElementById('roster-preview-panel').style.display = 'none';
+    }
+
+    let syncCooldownInterval = null;
+    function triggerManualSync() {
+      const btn = document.getElementById('btn-trigger-sync');
+      const timerBox = document.getElementById('sync-cooldown-timer');
+      const secEl = document.getElementById('cooldown-seconds');
+
+      btn.disabled = true;
+      btn.textContent = '⚡ Syncing in Progress…';
+
+      fetch('/api/v1/admin/sync/trigger', { method: 'POST' })
+        .then(res => res.json())
+        .then(() => {
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+          timerBox.style.display = 'block';
+          let timeLeft = 60;
+          secEl.textContent = timeLeft;
+
+          if (syncCooldownInterval) clearInterval(syncCooldownInterval);
+          syncCooldownInterval = setInterval(() => {
+            timeLeft--;
+            secEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+              clearInterval(syncCooldownInterval);
+              timerBox.style.display = 'none';
+              btn.disabled = false;
+            }
+          }, 1000);
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+        });
+    }
+
+    function toggleLogDetail(logId) {
+      const el = document.getElementById(logId);
+      if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    function refreshAdminLogs() {
+      fetch('/api/v1/admin/sync/logs')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert('🔄 Admin sync audit log refreshed with latest entries.');
+          }
+        });
+    }
+
+    // --- M6 Interactive Helper Functions ---
+    function filterHistoryTable() {
+      const subjectVal = document.getElementById('history-filter-subject').value;
+      const statusVal = document.getElementById('history-filter-status').value;
+      const searchVal = document.getElementById('history-search-input').value.toLowerCase().trim();
+
+      const rows = document.querySelectorAll('#history-rollcall-stack .roll-call-row');
+      rows.forEach(row => {
+        const rowSubject = row.getAttribute('data-subject');
+        const rowStatus = row.getAttribute('data-status');
+        const rowText = row.getAttribute('data-text') || '';
+
+        const matchSubject = subjectVal === 'all' || rowSubject === subjectVal;
+        const matchStatus = statusVal === 'all' || rowStatus === statusVal;
+        const matchSearch = !searchVal || rowText.toLowerCase().includes(searchVal);
+
+        row.style.display = (matchSubject && matchStatus && matchSearch) ? 'flex' : 'none';
+      });
+    }
+
+    function exportHistoryCSV() {
+      const rows = document.querySelectorAll('#history-rollcall-stack .roll-call-row');
+      let csvContent = 'Date,Subject,Status,Details\n';
+
+      rows.forEach(row => {
+        if (row.style.display !== 'none') {
+          const date = row.querySelector('.rc-date').textContent.trim();
+          const subject = row.querySelector('.rc-subject').textContent.trim();
+          const status = row.querySelector('.rc-status span').textContent.trim();
+          const detail = row.querySelector('.rc-detail').textContent.trim().replace(/,/g, ' -');
+          csvContent += `"${date}","${subject}","${status}","${detail}"\n`;
+        }
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `openattend-history-${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function updatePredictorView(subjectCode) {
+      const centerpiece = document.getElementById('predictor-centerpiece');
+      const textEl = document.getElementById('predictor-sentence-text');
+      const breakdownEl = document.getElementById('predictor-formula-breakdown');
+
+      const data = {
+        'overall': { present: 101, total: 126, threshold: 0.75, status: 'SAFE', skips: 8, must: 0 },
+        'CS401': { present: 36, total: 42, threshold: 0.75, status: 'SAFE', skips: 6, must: 0 },
+        'CS402': { present: 36, total: 44, threshold: 0.75, status: 'SAFE', skips: 4, must: 0 },
+        'CS403': { present: 29, total: 40, threshold: 0.75, status: 'RISK', skips: 0, must: 4 }
+      };
+
+      const sel = data[subjectCode] || data['overall'];
+
+      if (sel.status === 'SAFE') {
+        centerpiece.style.background = 'var(--accent-dim)';
+        centerpiece.style.borderColor = 'var(--accent)';
+        textEl.innerHTML = `You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-safe);">${sel.skips}</span> more consecutive lectures while keeping attendance above <strong>75%</strong>.`;
+        breakdownEl.innerHTML = `Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: (${sel.present} - (0.75 × ${sel.total})) / 0.75 = ${sel.skips} skips remaining`;
+      } else {
+        centerpiece.style.background = 'rgba(214, 69, 69, 0.12)';
+        centerpiece.style.borderColor = 'var(--state-risk)';
+        textEl.innerHTML = `You must attend <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-risk);">${sel.must}</span> consecutive lectures to reach <strong>75%</strong> threshold.`;
+        breakdownEl.innerHTML = `Formula: Must Attend = ceil(((threshold × T) - P) / (1 - threshold))<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: ((0.75 × ${sel.total}) - ${sel.present}) / (1 - 0.75) = ${sel.must} lectures required`;
+      }
+    }
+
+    function markAllNotificationsRead() {
+      fetch('/api/v1/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+      document.querySelectorAll('#pane-notifications .roll-call-row').forEach(row => {
+        row.style.opacity = '0.65';
+      });
+    }
+
+    let currentAuthRole = 'STUDENT';
+    let currentUserSession = null;
+
+    function switchAuthTab(role) {
+      currentAuthRole = role;
+      document.getElementById('auth-tab-student').classList.toggle('active', role === 'STUDENT');
+      document.getElementById('auth-tab-admin').classList.toggle('active', role === 'ADMIN');
+      document.getElementById('auth-email-input').placeholder = role === 'ADMIN' ? 'admin@ves.ac.in' : 'student@ves.ac.in';
+      hideAuthError();
+    }
+
+    function fillQuickDemo(role) {
+      switchAuthTab(role);
+      if (role === 'ADMIN') {
+        document.getElementById('auth-email-input').value = 'admin@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'admin123';
+      } else {
+        document.getElementById('auth-email-input').value = 'student@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'password123';
+      }
+      hideAuthError();
+      submitAuthLogin();
+    }
+
+    function showAuthError(msg) {
+      const alert = document.getElementById('auth-error-alert');
+      document.getElementById('auth-error-text').textContent = msg;
+      alert.style.display = 'flex';
+    }
+
+    function hideAuthError() {
+      document.getElementById('auth-error-alert').style.display = 'none';
+    }
+
+    async function submitAuthLogin(e) {
+      if (e) e.preventDefault();
+      hideAuthError();
+
+      const email = document.getElementById('auth-email-input').value.trim();
+      const password = document.getElementById('auth-password-input').value;
+      const submitBtn = document.getElementById('auth-submit-btn');
+
+      if (!email.toLowerCase().endsWith('@ves.ac.in')) {
+        showAuthError('Only official @ves.ac.in institutional email addresses are permitted.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating…';
+
+      const apiBase = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:3000' : '';
+
+      try {
+        const res = await fetch(apiBase + '/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          showAuthError(data.error || 'Authentication failed');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to Dashboard →';
+          return;
+        }
+
+        // Save session locally
+        currentUserSession = data.session;
+        localStorage.setItem('openattend_session', JSON.stringify(data.session));
+
+        applyUserSession(data.session);
+        document.getElementById('auth-modal').classList.add('hidden');
+
+      } catch (err) {
+        // Network fallback: handle local demo authentication if backend server is unreachable
+        const cleanEmail = email.toLowerCase();
+        if (cleanEmail === 'student@ves.ac.in' && password === 'password123') {
+          const mockSession = {
+            id: 'usr_student_1',
+            email: 'student@ves.ac.in',
+            name: 'Vedant Gharat',
+            role: 'STUDENT',
+            rollNo: '2024CS01',
+            division: 'D12B',
+            batch: 'B1',
+            accessToken: 'at_demo_student_' + Date.now()
+          };
+          currentUserSession = mockSession;
+          localStorage.setItem('openattend_session', JSON.stringify(mockSession));
+          applyUserSession(mockSession);
+          document.getElementById('auth-modal').classList.add('hidden');
+        } else if (cleanEmail === 'admin@ves.ac.in' && password === 'admin123') {
+          const mockSession = {
+            id: 'usr_admin_1',
+            email: 'admin@ves.ac.in',
+            name: 'Prof. Admin User',
+            role: 'ADMIN',
+            rollNo: 'ADM-01',
+            accessToken: 'at_demo_admin_' + Date.now()
+          };
+          currentUserSession = mockSession;
+          localStorage.setItem('openattend_session', JSON.stringify(mockSession));
+          applyUserSession(mockSession);
+          document.getElementById('auth-modal').classList.add('hidden');
+        } else {
+          showAuthError('Invalid credentials. Password or user email is incorrect.');
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In to Dashboard →';
+      }
+    }
+
+    function applyUserSession(session) {
+      currentUserSession = session;
+      const initials = session.name ? session.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+      
+      document.getElementById('user-avatar-initials').textContent = initials;
+      document.getElementById('user-name-display').textContent = session.name || session.email;
+      document.getElementById('user-role-display').textContent = `${session.role} • ${session.rollNo || ''}`;
+      document.getElementById('user-profile-bar').style.display = 'flex';
+
+      toggleRole(session.role);
+    }
+
+    function handleLogout() {
+      if (currentUserSession && currentUserSession.accessToken) {
+        fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + currentUserSession.accessToken }
+        }).catch(() => {});
+      }
+
+      currentUserSession = null;
+      localStorage.removeItem('openattend_session');
+
+      document.getElementById('user-profile-bar').style.display = 'none';
+      document.getElementById('auth-email-input').value = '';
+      document.getElementById('auth-password-input').value = '';
+      hideAuthError();
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    // Auto-login check on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('openattend_session');
+      if (saved) {
+        try {
+          const session = JSON.parse(saved);
+          if (session && session.accessToken) {
+            applyUserSession(session);
+            document.getElementById('auth-modal').classList.add('hidden');
+            return;
+          }
+        } catch (e) {}
+      }
+      // Register PWA Service Worker
+      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        navigator.serviceWorker.register('/sw.js').then(() => {
+          console.log('OpenAttend PWA Service Worker Registered');
+        }).catch(() => {});
+      }
+    });
+  </script>
+
+</body>
+</html>

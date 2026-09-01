@@ -655,57 +655,29 @@ All 4xx/5xx responses follow:
 
 ```
 openattend/
-├── apps/
-│   ├── web/                        # React + Vite frontend
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   ├── pages/
-│   │   │   │   ├── dashboard/
-│   │   │   │   ├── subject/
-│   │   │   │   ├── analytics/
-│   │   │   │   ├── admin/
-│   │   │   │   └── auth/
-│   │   │   ├── hooks/               # React Query hooks per resource
-│   │   │   ├── lib/                 # api client, predictor client util
-│   │   │   ├── charts/              # Recharts wrappers
-│   │   │   └── styles/
-│   │   ├── index.html
-│   │   ├── vite.config.ts
-│   │   └── package.json
-│   │
-│   └── api/                        # NestJS backend
-│       ├── src/
-│       │   ├── auth/
-│       │   ├── students/
-│       │   ├── subjects/
-│       │   ├── attendance/
-│       │   ├── analytics/
-│       │   ├── predictor/
-│       │   ├── notifications/
-│       │   ├── sync/
-│       │   │   ├── sheets-client.ts
-│       │   │   ├── worksheet-mapper.ts
-│       │   │   ├── differ.ts
-│       │   │   ├── upsert-engine.ts
-│       │   │   ├── sync.scheduler.ts
-│       │   │   └── sync.module.ts
-│       │   ├── admin/
-│       │   ├── common/              # guards, interceptors, filters, decorators
-│       │   ├── prisma/
-│       │   │   └── schema.prisma
-│       │   ├── main.ts
-│       │   └── app.module.ts
-│       ├── test/
-│       └── package.json
+├── backend/                        # Java Spring Boot 3 Backend
+│   ├── pom.xml
+│   ├── src/main/java/com/vesit/openattend/
+│   │   ├── OpenAttendApplication.java
+│   │   ├── config/                 # SecurityConfig, GoogleSheetsConfig, WebMvcConfig
+│   │   ├── controller/             # AuthController, AttendanceController, AdminController, HealthController
+│   │   ├── entity/                 # JPA Entities (User, Student, Subject, AttendanceRecord, etc.)
+│   │   ├── repository/             # Spring Data JPA Repositories
+│   │   ├── service/                # AuthService, AttendanceService, PredictorService, AdminService
+│   │   │   └── sync/               # SheetsClient, SyncDiffer, WorksheetMapper, UpsertEngine
+│   │   └── security/               # JwtTokenProvider, JwtAuthenticationFilter, EmailDomainValidator
+│   ├── src/main/resources/
+│   │   ├── application.yml
+│   │   └── db/migration/           # Flyway SQL (V1__init_schema.sql)
+│   └── src/test/                   # JUnit 5 & Mockito test suites
 │
-├── packages/
-│   ├── shared-types/                # DTOs shared between web & api
-│   └── predictor-core/              # pure predictor math, unit-testable standalone
+├── index.html                      # PWA Web Client (HTML/CSS/JS)
+├── sw.js                           # Service Worker
+├── manifest.json                   # PWA Manifest
 │
 ├── infra/
 │   ├── docker/
-│   │   ├── Dockerfile.api
-│   │   ├── Dockerfile.web
+│   │   ├── Dockerfile
 │   │   └── docker-compose.yml
 │   └── github-actions/
 │       ├── ci.yml
@@ -713,17 +685,19 @@ openattend/
 │
 ├── docs/
 │   ├── architecture.md
-│   ├── er-diagram.png
-│   ├── api-docs/ (OpenAPI spec)
-│   └── setup-guide.md
+│   ├── Milestone.md
+│   ├── PRD.md
+│   ├── UI.md
+│   ├── setup-guide.md
+│   └── openapi.json
 │
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/
+├── AGENTS.md                       # Autonomous Multi-Agent Workflow Protocol
+├── memory.md                       # Active Milestone & Progress State
+├── review.md                       # Milestone Review Output
 ├── CONTRIBUTING.md
 ├── LICENSE (MIT)
 ├── README.md
-└── package.json (workspaces root)
+└── package.json (root scripts)
 ```
 
 ---
@@ -732,17 +706,15 @@ openattend/
 
 | Choice | Why |
 |---|---|
-| **React + Vite + TS** | Fast HMR dev loop, strong typing catches Sheets-schema-drift bugs at compile time in DTOs, huge ecosystem for charts/UI. |
-| **TailwindCSS + shadcn/ui** | Utility-first styling matches the "Linear/Notion aesthetic" requirement without hand-rolling a design system; shadcn gives accessible, unstyled-by-default primitives. |
-| **React Query** | Server-state caching/invalidation is exactly the model needed for polling-based dashboards (background refetch, stale-while-revalidate) — avoids hand-rolled polling logic. |
-| **Recharts** | Declarative, React-native charting sufficient for line/bar comparisons; lighter than D3 for this scope. |
-| **NestJS over raw Express** | Built-in DI, guards (perfect for RBAC), module boundaries mirror the module table in §5.1, first-class `@Cron` scheduling for the sync worker without extra infra. Express remains a valid lighter-weight fallback for smaller self-hosted deployments. |
-| **Prisma ORM** | Type-safe query builder, migration tooling, and native `upsert`/`createMany({skipDuplicates})` map directly onto the idempotent-sync requirement (§6.3). |
-| **PostgreSQL** | Transactional upserts, strong indexing, `JSONB` for flexible `columnRoles` config, mature and self-hostable — no vendor lock-in, aligning with open-source goals. |
-| **JWT (access+refresh)** | Stateless auth scales horizontally without sticky sessions; refresh-token rotation limits blast radius of token theft. |
-| **Google Sheets API (read-only scope)** | Only viable integration point that touches zero faculty workflow; read-only scope structurally enforces NG2. |
-| **Vercel (frontend) / Railway or Render (backend)** | Both offer generous free/hobby tiers suited to college-scale open-source deployments, git-push-to-deploy simplicity, and are decoupled so either can be swapped without touching the other. |
-| **Docker Compose for local/self-host** | Any college IT admin can `docker compose up` without cloud accounts, critical for an open-source, self-hostable tool. |
+| **Vanilla PWA + CSS Design System** | Blazing fast load times, zero build overhead, native PWA offline caching, accessible across all devices. |
+| **Java 21 LTS + Spring Boot 3.4.x** | Enterprise-grade reliability, virtual threads support, mature ecosystem, and first-class `@Scheduled` background worker capabilities. |
+| **Spring Data JPA + Hibernate** | Strong ORM abstractions, type-safe queries, connection pooling via HikariCP, and robust transactional batch upserts. |
+| **Flyway Database Migrations** | Deterministic, version-controlled database migrations applied automatically upon application startup. |
+| **PostgreSQL** | Transactional upserts, strong indexing, `JSONB` for flexible `columnRoles` config, mature and self-hostable — no vendor lock-in. |
+| **Spring Security 6 + JJWT** | Stateless HMAC-SHA256 bearer tokens, role-based method security (`@PreAuthorize`), and strict `@ves.ac.in` domain filtering. |
+| **Google Sheets API Java SDK (read-only)** | Official Google Java client library with scoped `spreadsheets.readonly` access and Base64 service account decoding. |
+| **Spring Boot Actuator + Micrometer** | Production-ready health endpoints (`/actuator/health`) and Prometheus metrics (`/actuator/prometheus`). |
+| **Docker Compose for local/self-host** | Any college IT admin can `docker compose up` with zero cloud friction. |
 
 ---
 

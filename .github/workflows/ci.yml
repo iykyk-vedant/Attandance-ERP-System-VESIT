@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Java 21 LTS
+        uses: actions/setup-java@v4
         with:
-          node-version: 22
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Monorepo Test Suite
-        run: npm test
+      - name: Build and Run Automated Tests
+        working-directory: backend
+        run: mvn clean test

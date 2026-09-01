@@ -12,82 +12,97 @@
   <h1 align="center">OpenAttend — VESIT</h1>
 </p>
 <h3 align="center">High performance live companion attendance platform for VESIT</h3>
+<p align="center"><em>Built with Java 21 LTS, Spring Boot 3.4, PostgreSQL, Flyway, and Vanilla PWA</em></p>
 <br/>
 
 > [!IMPORTANT]
-> ⚠️ **OpenAttend** is a read-only companion attendance platform tailored for VESIT. Faculty mark attendance via Google Forms into Google Sheets while OpenAttend normalizes and syncs data into PostgreSQL in real time!
+> ⚠️ **OpenAttend** is an architecture-decoupled, read-only companion attendance platform tailored for VESIT. Faculty mark attendance via Google Forms into Google Sheets while OpenAttend normalizes and syncs data into PostgreSQL in real time!
 
 > [!NOTE]
-> Detailed documentation, technical specs, and roadmap can be found in the [`docs/`](docs/) directory.
+> Detailed technical specs, database schemas, and administrator guides can be found in [`docs/`](docs/).
 
-## Links
+---
 
-- [Documentation](docs/PRD.md)
-- [Milestone Roadmap](docs/Milestone.md)
-- [UI Specification](docs/UI.md)
-- [Features](#features)
-- [Quick Start](#quick-start-local-setup)
-- [Docker Setup](#docker-deployment)
-- [Testing](#testing)
+## 🏗 Architecture & Tech Stack
 
-## Features
+| Layer | Technologies |
+| :--- | :--- |
+| **Backend Framework** | **Java 21 LTS** + **Spring Boot 3.4.x** (`spring-boot-starter-web`, `spring-boot-starter-data-jpa`) |
+| **Database & Migrations** | **PostgreSQL** + **Flyway Migrations** (`V1__init_schema.sql`) |
+| **Security & Auth** | **Spring Security 6** + **Stateless JJWT** (`@ves.ac.in` email restriction, BCrypt hashing) |
+| **Sync Engine** | **Google Sheets API Java SDK** (`spreadsheets.readonly`) + SHA-256 Differ + `@Transactional` Upsert |
+| **Observability** | **Spring Boot Actuator** (`/actuator/health`, `/actuator/prometheus`) |
+| **Frontend UI** | **Vanilla HTML5/CSS3 PWA** with Service Worker (`sw.js`) and Offline Caching |
+| **Containerization** | Multi-stage **Dockerfile** + **Docker Compose** |
 
-| Features                                     | Student | Admin / Faculty |
-| :------------------------------------------- | :-----: | :-------------: |
-| Real-time Google Sheets Sync & Normalization | Yes     | Yes             |
-| Idempotent Sync Engine (Zero Duplicates)    | Yes     | Yes             |
-| Attendance Predictor (Safe Skips & Targets)  | Yes     | Yes             |
-| SyncPulse Staleness & Live Status Indicator  | Yes     | Yes             |
-| Role-Based Access Control (RBAC)             | Yes     | Yes             |
-| Interactive Analytics & Visual Graphs        | Yes     | Yes             |
-| User & System Admin Management               | No      | Yes             |
+---
 
-## Quick Start (Local Setup)
+## ⚡ Quick Start (Local Setup)
 
 ### Prerequisites
-- **Node.js 20+**
-- **Docker & Docker Compose**
+- **Java 21 LTS** (OpenJDK or Eclipse Temurin)
+- **Apache Maven 3.9+** (or `./mvnw`)
+- **Docker & Docker Compose** (for PostgreSQL)
 
-### Running locally
+### 1. Clone & Configure
 ```bash
-# 1. Clone the repository
 git clone https://github.com/iykyk-vedant/OpenAttend-VESIT.git
 cd OpenAttend-VESIT
-
-# 2. Start dev server
-npm run dev
+cp .env.example .env
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Docker Deployment
+### 2. Start PostgreSQL
+```bash
+docker compose -f infra/docker/docker-compose.yml up -d postgres
+```
 
+### 3. Run Spring Boot Backend
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+---
+
+## 🧪 Testing & Verification
+
+Run the full automated test suite (Unit, Predictor math, Idempotent sync differ, Auth, Admin RBAC, and MockMvc endpoints):
+```bash
+cd backend
+mvn test
+```
+
+---
+
+## 🐳 Docker Deployment
+
+To build and run both the Spring Boot application and PostgreSQL container together:
 ```bash
 docker compose -f infra/docker/docker-compose.yml up --build -d
 ```
 
-## Testing
+---
 
-```bash
-# Run Predictor & Sync Unit Tests
-npm test
-```
+## 📋 Features Matrix
 
-## Repository activity
+| Features | Student | Admin / Faculty |
+| :--- | :---: | :---: |
+| **Real-time Read-Only Google Sheets Sync** | Yes | Yes |
+| **SHA-256 Natural Key Idempotency (Zero Duplicates)** | Yes | Yes |
+| **Attendance Predictor (Safe Skips & Must-Attend Math)** | Yes | Yes |
+| **Threshold Breach & Defaulter Alerts (<75%)** | Yes | Yes |
+| **Filterable History & Roll-Call CSV Export** | Yes | Yes |
+| **Admin Cold-Start Setup (Sheet Connect ➔ Map ➔ Sync)** | No | Yes |
+| **Roster CSV Import with Pre-Commit Diffing** | No | Yes |
+| **Prometheus Metrics & Health Actuator** | No | Yes |
 
-![Activities](https://repobeats.axiom.co/api/embed/iykyk-vedant/OpenAttend-VESIT "Repobeats analytics image")
+---
 
-## Star history
-
-<a href="https://star-history.com/#iykyk-vedant/OpenAttend-VESIT&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=iykyk-vedant/OpenAttend-VESIT&type=date" width="100%" />
- </picture>
-</a>
-
-## Contributors
-
-<a href="https://github.com/iykyk-vedant/OpenAttend-VESIT/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=iykyk-vedant/OpenAttend-VESIT" width="100%"/>
-</a>
+## 📄 Documentation Links
+- [**PRD & Requirements Specification**](docs/PRD.md)
+- [**System Architecture & ER Diagram**](docs/architecture.md)
+- [**Administrator Setup Guide**](docs/setup-guide.md)
+- [**Milestone Roadmap (M0–M9)**](docs/Milestone.md)
+- [**Autonomous Agent Protocol (AGENTS.md)**](AGENTS.md)

@@ -10,20 +10,24 @@ OpenAttend is an architecture-decoupled, read-only companion attendance platform
 graph TD
     Faculty[Faculty Google Forms] -->|Marks Attendance| GoogleSheet[Google Spreadsheet]
     
-    subgraph OpenAttend Core Engine
-        SheetsClient[SheetsClient - Read-Only API] -->|Polls Worksheet Values| SyncDiffer[SyncDiffer - SHA-256 Hashing]
+    subgraph OpenAttend Core Backend (Java Spring Boot 3)
+        SheetsClient[SheetsClient - Google Sheets Java SDK] -->|Polls Worksheet Values| SyncDiffer[SyncDiffer - SHA-256 Hashing]
         SyncDiffer -->|Unchanged Hash| Skip[SKIPPED_NO_CHANGE]
-        SyncDiffer -->|New/Modified Hash| UpsertEngine[UpsertEngine - Natural Key Transaction]
-        UpsertEngine -->|Atomic Upsert| PostgreSQL[(PostgreSQL Database)]
+        SyncDiffer -->|New/Modified Hash| UpsertEngine[UpsertEngine - @Transactional JPA Batch]
+        UpsertEngine -->|Atomic Upsert| PostgreSQL[(PostgreSQL Database via Flyway)]
         UpsertEngine -->|Log Run Status| SyncLogger[SyncLogger - Audit Log]
+        
+        Scheduler[Spring TaskScheduler / Cron] -->|Scheduled Polling| SheetsClient
+        PredictorCore[PredictorService Engine] -->|Calculates Safe Skips & Projections| RESTApi
+        Security[Spring Security 6 + JJWT] -->|Stateless Auth & Domain Filter| RESTApi[Spring Web MVC REST Controllers]
+        Actuator[Spring Boot Actuator] -->|Health & Prometheus Metrics| Metrics[/actuator/prometheus]
     end
 
-    GoogleSheet -->|ReadOnly Access| SheetsClient
+    GoogleSheet -->|ReadOnly Scoped Access| SheetsClient
 
     subgraph Client Experience Layer
-        PostgreSQL -->|Reads Only| RESTApi[Node.js REST API]
-        RESTApi -->|Serves Dashboard| WebUI[Student & Admin Web Dashboard]
-        PredictorCore[Predictor Core Engine] -->|Calculates Safe Skips| RESTApi
+        PostgreSQL -->|Reads Only| RESTApi
+        RESTApi -->|Serves JSON API & Dashboard| WebUI[Student & Admin PWA Dashboard]
     end
 ```
 
@@ -43,12 +47,43 @@ erDiagram
     USER {
         string id PK
         string email UK
-        string passHash
-        string name
+        string passwordHash
         enum role "STUDENT | ADMIN | SUPER_ADMIN"
-        string rollNo
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    STUDENT {
+        string id PK
+        string userId FK
+        string rollNo UK
+        string name
         string division
         string batch
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    SUBJECT {
+        string id PK
+        string code UK
+        string name
+        int totalPlanned
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    WORKSHEET_MAPPING {
+        string id PK
+        string subjectId FK
+        string sheetId
+        string worksheetName
+        string range
+        json columnRoles
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
     }
 
     ATTENDANCE_RECORD {
@@ -57,24 +92,32 @@ erDiagram
         string subjectId FK
         date lectureDate
         int sessionIndex
-        enum status "PRESENT | ABSENT | EXCUSED"
+        enum status "PRESENT | ABSENT | NA"
+        string faculty
+        string remarks
         string sourceRowHash
+        datetime syncedAt
+        datetime updatedAt
     }
 
     ATTENDANCE_HISTORY_EVENT {
         string id PK
         string attendanceRecordId FK
-        string previousStatus
-        string newStatus
-        string modifiedBy
-        datetime timestamp
+        enum previousStatus "PRESENT | ABSENT | NA"
+        enum newStatus "PRESENT | ABSENT | NA"
+        datetime changedAt
+        string syncLogId FK
     }
 
-    WORKSHEET_MAPPING {
+    NOTIFICATION {
         string id PK
-        string subjectCode
-        string worksheetTab
-        json columnRoles
+        string studentId FK
+        string subjectId FK
+        string type
+        string message
+        boolean isRead
+        string syncLogId
+        datetime createdAt
     }
 
     SYNC_LOG {
@@ -87,5 +130,15 @@ erDiagram
         string errorMessage
         datetime startedAt
         datetime finishedAt
+        int durationMs
     }
 ```
+
+---
+
+## 🛡 Architectural Guarantees & Non-Negotiable Invariants
+
+1. **Strict Read-Only Google Sheets Scopes**: No code path anywhere requests Google write permissions (`spreadsheets.readonly` only).
+2. **Zero Synchronous External Calls on User Reads**: Student and Admin dashboard reads query PostgreSQL directly; they never call Google Sheets API synchronously.
+3. **Natural Key Idempotency**: Attendance records are uniquely identified by `(studentId, subjectId, lectureDate, sessionIndex)`. Repeated sync runs produce zero duplicate rows.
+4. **Institutional Security & RBAC**: Strict validation that all authenticating accounts belong to the allowed institutional domain (`@ves.ac.in`).

@@ -1,12 +1,9 @@
 services:
   - type: web
     name: openattend-api
-    env: node
-    buildCommand: npm install && npx prisma generate
-    startCommand: npm run dev
+    env: docker
+    dockerfilePath: backend/Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: 3000
       - key: DATABASE_URL

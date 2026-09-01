@@ -1,30 +1,14 @@
 {
-  "name": "openattend-monorepo",
-  "version": "0.1.0",
+  "name": "openattend",
+  "version": "1.0.0",
   "private": true,
-  "description": "OpenAttend - Live read-only attendance platform for VESIT",
+  "description": "OpenAttend - Live read-only attendance platform for VESIT (Java Spring Boot 3 + PWA)",
   "type": "module",
-  "main": "index.js",
   "scripts": {
-    "build": "echo 'Static build ready'",
-    "dev": "node dev-server.js",
-    "test": "npx tsx --test packages/predictor-core/test.js && npx tsx --test apps/api/test/sync.test.js && npx tsx --test apps/api/test/milestones.test.js",
-    "test:predictor": "npx tsx --test packages/predictor-core/test.js",
-    "test:sync": "npx tsx --test apps/api/test/sync.test.js",
-    "test:milestones": "npx tsx --test apps/api/test/milestones.test.js"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "crypto": "^1.0.1",
-    "dotenv": "^17.4.2",
-    "pg": "^8.22.0"
-  },
-  "devDependencies": {
-    "prisma": "^5.22.0",
-    "tsx": "^4.23.5"
+    "dev": "cd backend && mvn spring-boot:run",
+    "build": "cd backend && mvn clean package -DskipTests",
+    "test": "cd backend && mvn test",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
   }
 }

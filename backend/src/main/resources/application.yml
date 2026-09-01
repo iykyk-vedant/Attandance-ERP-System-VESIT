@@ -1,0 +1,44 @@
+server:
+  port: ${PORT:3000}
+
+spring:
+  application:
+    name: openattend-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/openattend}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+openattend:
+  allowed-email-domain: ${ALLOWED_EMAIL_DOMAINS:ves.ac.in}
+  jwt:
+    secret: ${JWT_ACCESS_SECRET:openattend_super_secret_access_jwt_key_32chars_long}
+    access-expiry-ms: ${JWT_ACCESS_EXPIRY_MS:900000}
+  sync:
+    cron: ${SYNC_DEFAULT_CRON:0 */15 * * * *}
+    cooldown-seconds: 300

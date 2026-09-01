@@ -1,0 +1,29 @@
+name: OpenAttend Keep-Alive & Health Monitor (Custom UptimeRobot)
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free-tier instance from idling
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  ping-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Ping OpenAttend Backend Health Endpoint
+        env:
+          TARGET_URL: ${{ vars.BACKEND_URL || 'https://openattend-api.onrender.com' }}
+        run: |
+          echo "Pinging Health Endpoint: $TARGET_URL/api/v1/health"
+          
+          RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL/api/v1/health" || echo "FAILED")
+          
+          echo "HTTP Response Status Code: $RESPONSE_CODE"
+          
+          if [ "$RESPONSE_CODE" -eq 200 ]; then
+            echo "✅ Server is ACTIVE and healthy! No cold-start delay."
+          else
+            echo "⚠️ Health check responded with code $RESPONSE_CODE. Warming up instance..."
+          fi
