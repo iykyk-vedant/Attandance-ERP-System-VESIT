@@ -28,6 +28,16 @@ public class WorksheetMapper {
             return null;
         }
         String clean = rawDate.trim();
+
+        // Support Excel / Google Sheets numeric serial dates (e.g., 46237 or 46237.0)
+        try {
+            double serial = Double.parseDouble(clean);
+            if (serial > 30000 && serial < 80000) {
+                return LocalDate.of(1899, 12, 30).plusDays((long) serial);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 return LocalDate.parse(clean, formatter);
@@ -101,5 +111,64 @@ public class WorksheetMapper {
                 .remarks(remarks)
                 .sourceRowHash(sourceRowHash)
                 .build();
+    }
+
+    /**
+     * Unpivots VESIT professor matrix attendance grids (dates across columns, students in rows)
+     */
+    public static List<ParsedAttendanceRow> mapMatrixGridSheet(
+            List<List<Object>> rows,
+            int dateRowIndex,
+            int startDataRowIndex,
+            int rollNoColIndex,
+            int startDateColIndex
+    ) {
+        List<ParsedAttendanceRow> results = new ArrayList<>();
+        if (rows == null || rows.size() <= Math.max(dateRowIndex, startDataRowIndex)) {
+            return results;
+        }
+
+        List<Object> dateRow = rows.get(dateRowIndex);
+        List<LocalDate> columnDates = new ArrayList<>();
+        for (int c = 0; c < dateRow.size(); c++) {
+            if (c >= startDateColIndex && dateRow.get(c) != null) {
+                LocalDate d = parseDate(dateRow.get(c).toString());
+                columnDates.add(d);
+            } else {
+                columnDates.add(null);
+            }
+        }
+
+        for (int r = startDataRowIndex; r < rows.size(); r++) {
+            List<Object> row = rows.get(r);
+            if (row == null || row.size() <= rollNoColIndex || row.get(rollNoColIndex) == null) {
+                continue;
+            }
+
+            String roll = row.get(rollNoColIndex).toString().trim();
+            if (roll.isEmpty()) continue;
+
+            for (int c = startDateColIndex; c < Math.min(row.size(), columnDates.size()); c++) {
+                LocalDate lectureDate = columnDates.get(c);
+                if (lectureDate == null) continue;
+
+                Object val = row.get(c);
+                if (val == null) continue;
+                String rawVal = val.toString().trim();
+                if (rawVal.isEmpty()) continue;
+
+                AttendanceStatus status = parseStatus(rawVal);
+                if (status != AttendanceStatus.NA) {
+                    results.add(ParsedAttendanceRow.builder()
+                            .studentRollNo(roll)
+                            .lectureDate(lectureDate)
+                            .sessionIndex(0)
+                            .status(status)
+                            .build());
+                }
+            }
+        }
+
+        return results;
     }
 }
