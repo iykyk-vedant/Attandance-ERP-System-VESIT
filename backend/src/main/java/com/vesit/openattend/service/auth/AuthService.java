@@ -53,9 +53,6 @@ public class AuthService {
                     .build();
         }
 
-        // Seed default demo accounts if not present
-        ensureSeedAccounts();
-
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             return LoginResponse.builder()
