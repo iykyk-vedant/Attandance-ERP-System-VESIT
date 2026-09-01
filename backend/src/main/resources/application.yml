@@ -13,6 +13,9 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 2
       idle-timeout: 30000
+      data-source-properties:
+        prepareThreshold: 0
+        preparedStatementCacheQueries: 0
   jpa:
     hibernate:
       ddl-auto: validate
