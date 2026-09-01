@@ -1037,20 +1037,6 @@
             </div>
           </div>
 
-          <!-- Predictor Callout Component -->
-          <div class="predictor-callout-card" id="dash-predictor-card">
-            <div class="predictor-sentence" id="dash-predictor-text">
-              You can safely miss <span class="predictor-num font-mono" id="dash-skips-num">0</span> consecutive lectures overall while maintaining attendance above the mandatory <strong>75%</strong> threshold.
-            </div>
-            <div class="predictor-formula-toggle" onclick="toggleFormula('formula-dash')">
-              ▶ How is this calculated?
-            </div>
-            <div class="predictor-formula-panel" id="formula-dash" style="display: none;">
-              <code>Safe Skips S = floor((Present - threshold * Total) / threshold)</code><br>
-              <code>Must Attend M = ceil((threshold * Total - Present) / (1 - threshold))</code>
-            </div>
-          </div>
-
           <!-- Subject Cards Grid -->
           <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Subject Wise Breakdown</h2>
           <div class="cards-grid" id="dash-subject-cards-grid">
