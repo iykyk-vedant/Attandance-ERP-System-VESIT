@@ -1863,7 +1863,13 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Authenticating…';
 
-      const apiBase = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:3000' : '';
+      const warmupTimer = setTimeout(() => {
+        if (submitBtn.disabled) {
+          submitBtn.textContent = 'Waking up cloud server (cold start, ~20s)…';
+        }
+      }, 3000);
+
+      const apiBase = (window.location.protocol === 'file:' || !window.location.host) ? 'https://openattend-vesit.onrender.com' : '';
 
       try {
         const res = await fetch(apiBase + '/api/v1/auth/login', {
@@ -1875,6 +1881,7 @@
         const data = await res.json();
         if (!data.success) {
           showAuthError(data.error || 'Authentication failed');
+          clearTimeout(warmupTimer);
           submitBtn.disabled = false;
           submitBtn.textContent = 'Sign In to Dashboard →';
           return;

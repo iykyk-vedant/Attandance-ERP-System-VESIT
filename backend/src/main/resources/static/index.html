@@ -1322,6 +1322,12 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Authenticating…';
 
+      const warmupTimer = setTimeout(() => {
+        if (submitBtn.disabled) {
+          submitBtn.textContent = 'Waking up cloud server (cold start, ~20s)…';
+        }
+      }, 3000);
+
       const apiBase = (window.location.protocol === 'file:' || !window.location.host) ? 'https://openattend-vesit.onrender.com' : '';
 
       try {
@@ -1346,6 +1352,7 @@
       } catch (err) {
         showAuthError('Network connection error. Please try again.');
       } finally {
+        clearTimeout(warmupTimer);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In to Dashboard →';
       }

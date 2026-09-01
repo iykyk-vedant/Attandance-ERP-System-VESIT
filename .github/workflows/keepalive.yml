@@ -1,29 +1,49 @@
-name: OpenAttend Keep-Alive & Health Monitor (Custom UptimeRobot)
+name: OpenAttend Keep-Alive & Health Monitor
 
 on:
   schedule:
-    # Run every 10 minutes to prevent Render free-tier instance from idling
-    - cron: '*/10 * * * *'
+    # Run every 5 minutes to prevent Render free-tier instance from sleeping (Render idle timeout is 15 min)
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
 jobs:
   ping-health:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
 
     steps:
-      - name: Ping OpenAttend Backend Health Endpoint
+      - name: Ping OpenAttend Backend Health Endpoint & Warm-up
         env:
           TARGET_URL: ${{ vars.BACKEND_URL || 'https://openattend-vesit.onrender.com' }}
         run: |
-          echo "Pinging Health Endpoint: $TARGET_URL/api/v1/health"
+          echo "============================================="
+          echo "Target Health URL: $TARGET_URL/api/v1/health"
+          echo "============================================="
           
-          RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL/api/v1/health" || echo "FAILED")
+          MAX_RETRIES=12
+          COUNT=0
+          SUCCESS=0
           
-          echo "HTTP Response Status Code: $RESPONSE_CODE"
+          while [ $COUNT -lt $MAX_RETRIES ]; do
+            COUNT=$((COUNT + 1))
+            echo "Attempt $COUNT/$MAX_RETRIES: Pinging $TARGET_URL/api/v1/health..."
+            
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 25 "$TARGET_URL/api/v1/health" || echo "000")
+            echo "HTTP Status Code: $HTTP_CODE"
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Server is ACTIVE, warm and healthy!"
+              SUCCESS=1
+              break
+            else
+              echo "⚠️ Instance is waking up or cold-starting (Code: $HTTP_CODE). Waiting 5 seconds before retry..."
+              sleep 5
+            fi
+          done
           
-          if [ "$RESPONSE_CODE" -eq 200 ]; then
-            echo "✅ Server is ACTIVE and healthy! No cold-start delay."
+          if [ $SUCCESS -eq 1 ]; then
+            echo "🎉 Keep-Alive Ping Successful! Render idle timer reset."
           else
-            echo "⚠️ Health check responded with code $RESPONSE_CODE. Warming up instance..."
+            echo "❌ Warning: Server did not return 200 OK within the warmup window."
+            exit 1
           fi
