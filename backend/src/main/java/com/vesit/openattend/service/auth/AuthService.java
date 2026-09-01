@@ -54,6 +54,10 @@ public class AuthService {
         }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty() && (email.equals("student@ves.ac.in") || email.equals("admin@ves.ac.in"))) {
+            ensureSeedAccounts();
+            userOpt = userRepository.findByEmail(email);
+        }
         if (userOpt.isEmpty()) {
             return LoginResponse.builder()
                     .success(false)
@@ -127,8 +131,9 @@ public class AuthService {
         }
     }
 
-    private void ensureSeedAccounts() {
-        if (!userRepository.existsByEmail("student@ves.ac.in")) {
+    @Transactional
+    public void ensureSeedAccounts() {
+        if (!userRepository.existsByEmail("student@ves.ac.in") && !studentRepository.existsByRollNo("2024CS01")) {
             User studentUser = userRepository.save(User.builder()
                     .id(UUID.randomUUID().toString())
                     .email("student@ves.ac.in")

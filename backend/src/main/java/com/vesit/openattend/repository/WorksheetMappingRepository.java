@@ -12,4 +12,5 @@ public interface WorksheetMappingRepository extends JpaRepository<WorksheetMappi
     Optional<WorksheetMapping> findBySubjectId(String subjectId);
     Optional<WorksheetMapping> findBySubjectCode(String subjectCode);
     List<WorksheetMapping> findByIsActiveTrue();
+    boolean existsBySheetIdAndWorksheetName(String sheetId, String worksheetName);
 }
