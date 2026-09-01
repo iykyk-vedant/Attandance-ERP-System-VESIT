@@ -933,7 +933,6 @@
         <div class="nav-section-title">ATTENDANCE</div>
         <div class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> Dashboard</div>
         <div class="nav-item" onclick="switchView('analytics', this)"><span>📈</span> Analytics</div>
-        <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
         <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
         <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
       </div>
@@ -1128,45 +1127,7 @@
           </div>
         </div>
 
-        <!-- View 3: Predictor -->
-        <div class="view-pane" id="pane-predictor" style="display: none; flex-direction: column; gap: 1.5rem;">
-          <div class="form-panel" style="padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-              <div>
-                <h2 style="font-size: 1.3rem; font-weight: 700;">Attendance Predictor Sandbox</h2>
-                <p style="color: var(--text-secondary); font-size: 13px;">Interactive calculation engine based on PRD §6.4 formulas.</p>
-              </div>
-              <div class="form-group" style="width: 220px; margin: 0;">
-                <select class="form-select" id="predictor-subject-select" onchange="updatePredictorView(this.value)">
-                  <option value="overall" selected>Overall Attendance</option>
-                  <option value="CS401">CS401 • Data Structures</option>
-                  <option value="CS402">CS402 • Operating Systems</option>
-                  <option value="CS403">CS403 • Database Systems</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Predictor Centerpiece Callout -->
-            <div class="predictor-callout-card" id="predictor-centerpiece" style="padding: 1.75rem; border-radius: 12px; background: var(--accent-dim); border: 1px solid var(--accent);">
-              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 0.5rem;">Status: Safe Above 75%</div>
-              <div class="predictor-sentence" id="predictor-sentence-text" style="font-size: 1.25rem;">
-                You can miss <span class="predictor-num font-mono" id="predictor-skips-val" style="font-size: 1.75rem;">8</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
-              </div>
-            </div>
-
-            <!-- Formula Transparency Panel -->
-            <div class="predictor-formula-panel" style="margin-top: 0.5rem; background: var(--bg-surface-2);">
-              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">🔢 Calculation Breakdown (PRD §6.4 Transparent Formula)</div>
-              <div class="font-mono" id="predictor-formula-breakdown" style="line-height: 1.7; font-size: 12px;">
-                Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>
-                Inputs: P = 101 present, T = 126 total, threshold = 0.75<br>
-                Calculation: (101 - (0.75 × 126)) / 0.75 = (101 - 94.5) / 0.75 = 6.5 / 0.75 = 8 skips
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- View 4: History -->
+        <!-- View 3: History -->
         <div class="view-pane" id="pane-history" style="display: none; flex-direction: column; gap: 1.25rem;">
           <!-- Filter & Export Controls -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
@@ -1262,7 +1223,6 @@
       const titles = {
         'dashboard': 'Student Dashboard',
         'analytics': 'Attendance Analytics',
-        'predictor': 'Attendance Predictor',
         'history': 'Attendance History',
         'notifications': 'Notifications'
       };
@@ -1321,48 +1281,6 @@
     }
 
     let studentSubjectsData = [];
-
-    function updatePredictorView(subjectCode) {
-      const centerpiece = document.getElementById('predictor-centerpiece');
-      const textEl = document.getElementById('predictor-sentence-text');
-      const breakdownEl = document.getElementById('predictor-formula-breakdown');
-
-      let sel = null;
-      if (subjectCode === 'overall' || !subjectCode) {
-        sel = window.overallAttendanceData ? {
-          present: window.overallAttendanceData.present || 0,
-          total: window.overallAttendanceData.total || 0,
-          status: (window.overallAttendanceData.predictor && window.overallAttendanceData.predictor.status) || 'SAFE',
-          skips: (window.overallAttendanceData.predictor && window.overallAttendanceData.predictor.safeSkips) || 0,
-          must: (window.overallAttendanceData.predictor && window.overallAttendanceData.predictor.mustAttend) || 0
-        } : { present: 0, total: 0, status: 'SAFE', skips: 0, must: 0 };
-      } else {
-        const found = studentSubjectsData.find(s => s.code === subjectCode);
-        if (found) {
-          sel = {
-            present: found.present,
-            total: found.total,
-            status: found.predictor ? found.predictor.status : 'SAFE',
-            skips: found.predictor ? found.predictor.safeSkips : 0,
-            must: found.predictor ? found.predictor.mustAttend : 0
-          };
-        } else {
-          sel = { present: 0, total: 0, status: 'SAFE', skips: 0, must: 0 };
-        }
-      }
-
-      if (sel.status === 'SAFE') {
-        centerpiece.style.background = 'var(--accent-dim)';
-        centerpiece.style.borderColor = 'var(--accent)';
-        textEl.innerHTML = `You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-safe);">${sel.skips}</span> more consecutive lectures while keeping attendance above <strong>75%</strong>.`;
-        breakdownEl.innerHTML = `Formula: Safe Skips = floor((P - (0.75 × T)) / 0.75)<br>Inputs: P = ${sel.present} present, T = ${sel.total} total conducted<br>Calculation: (${sel.present} - (0.75 × ${sel.total})) / 0.75 = ${sel.skips} skips remaining`;
-      } else {
-        centerpiece.style.background = 'rgba(214, 69, 69, 0.12)';
-        centerpiece.style.borderColor = 'var(--state-risk)';
-        textEl.innerHTML = `You must attend <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-risk);">${sel.must}</span> consecutive lectures to reach <strong>75%</strong> threshold.`;
-        breakdownEl.innerHTML = `Formula: Must Attend = ceil(((0.75 × T) - P) / (1 - 0.75))<br>Inputs: P = ${sel.present} present, T = ${sel.total} total conducted<br>Calculation: ((0.75 × ${sel.total}) - ${sel.present}) / 0.25 = ${sel.must} lectures required`;
-      }
-    }
 
     function markAllNotificationsRead() {
       if (currentUserSession && currentUserSession.accessToken) {
@@ -1477,16 +1395,6 @@
             ringCircle.style.stroke = pct >= 75 ? 'var(--state-safe)' : 'var(--state-risk)';
           }
 
-          // Predictor sentence
-          const predText = document.getElementById('dash-predictor-text');
-          const pred = data.predictor;
-          if (pred && predText) {
-            if (pred.status === 'SAFE') {
-              predText.innerHTML = `You can safely miss <span class="predictor-num font-mono">${pred.safeSkips}</span> consecutive lectures overall while maintaining attendance above the mandatory <strong>75%</strong> threshold.`;
-            } else {
-              predText.innerHTML = `You must attend <span class="predictor-num font-mono" style="color: var(--state-risk);">${pred.mustAttend}</span> consecutive lectures overall to reach the mandatory <strong>75%</strong> threshold.`;
-            }
-          }
         }
 
         // 2. Subjects Breakdown
@@ -1502,11 +1410,9 @@
               const isSafe = (s.pct || 0) >= 75;
               const borderClass = isSafe ? 'safe-border' : 'risk-border';
               const colorVar = isSafe ? 'var(--state-safe)' : 'var(--state-risk)';
-              const predInfo = s.predictor
-                ? (s.predictor.status === 'SAFE'
-                    ? `Safe Skips: ${s.predictor.safeSkips}`
-                    : `<span style="color: var(--state-risk); font-weight: 600">Must attend: ${s.predictor.mustAttend}</span>`)
-                : '';
+              const statusBadge = isSafe
+                ? `<span style="color: var(--state-safe); font-weight: 600;">✅ On Track (≥75%)</span>`
+                : `<span style="color: var(--state-risk); font-weight: 600;">⚠️ Needs Attendance (&lt;75%)</span>`;
 
               return `
                 <div class="subject-card ${borderClass}">
@@ -1521,8 +1427,8 @@
                     <div class="sc-progress-fill" style="width: ${Math.min(100, s.pct || 0)}%; background: ${colorVar}"></div>
                   </div>
                   <div class="sc-footer">
-                    <span>${s.present} / ${s.total} Lectures</span>
-                    <span>${predInfo}</span>
+                    <span>${s.present} / ${s.total} Lectures Attended</span>
+                    <span>${statusBadge}</span>
                   </div>
                 </div>
               `;
