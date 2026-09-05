@@ -60,7 +60,7 @@ public class NotificationServiceTest {
 
         subject = subjectRepository.save(Subject.builder()
                 .id(UUID.randomUUID().toString())
-                .code("CS403")
+                .code("NOT403")
                 .name("Database Systems")
                 .build());
     }

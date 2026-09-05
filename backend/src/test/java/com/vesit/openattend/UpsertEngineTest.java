@@ -76,7 +76,7 @@ public class UpsertEngineTest {
 
         Subject subject = subjectRepository.save(Subject.builder()
                 .id(UUID.randomUUID().toString())
-                .code("CS401")
+                .code("UPS401")
                 .name("Data Structures")
                 .build());
 
@@ -84,7 +84,7 @@ public class UpsertEngineTest {
                 .id(UUID.randomUUID().toString())
                 .subject(subject)
                 .sheetId("sheet_test_123")
-                .worksheetName("CS401")
+                .worksheetName("UPS401")
                 .range("A1:E100")
                 .columnRoles("{\"date\":\"A\",\"rollNo\":\"B\",\"status\":\"C\",\"faculty\":\"D\",\"remarks\":\"E\"}")
                 .build());

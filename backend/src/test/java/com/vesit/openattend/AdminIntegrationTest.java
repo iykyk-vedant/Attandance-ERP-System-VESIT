@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -22,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 public class AdminIntegrationTest {
 
     @Autowired
@@ -44,7 +47,7 @@ public class AdminIntegrationTest {
 
         // Step 2: Save Worksheet Column Mapping
         WorksheetMappingRequest mapReq = WorksheetMappingRequest.builder()
-                .subjectCode("CS401")
+                .subjectCode("ADM401")
                 .subjectName("Data Structures")
                 .sheetId("1a2b3c_sheet_id")
                 .worksheetName("CS401")

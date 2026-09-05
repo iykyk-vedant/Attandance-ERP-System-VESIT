@@ -67,7 +67,7 @@ public class RepositoryTest {
 
         Subject subject = Subject.builder()
                 .id(UUID.randomUUID().toString())
-                .code("CS401")
+                .code("REP401")
                 .name("Data Structures & Algorithms")
                 .totalPlanned(45)
                 .build();
@@ -77,7 +77,7 @@ public class RepositoryTest {
                 .id(UUID.randomUUID().toString())
                 .subject(subject)
                 .sheetId("sheet_123")
-                .worksheetName("CS401")
+                .worksheetName("REP401")
                 .range("A1:F100")
                 .columnRoles("{\"date\":\"A\",\"rollNo\":\"B\",\"status\":\"C\"}")
                 .build();
