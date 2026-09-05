@@ -6,6 +6,9 @@ on:
     - cron: '*/5 * * * *'
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
+env:
+  BACKEND_URL: 'https://openattend-vesit.onrender.com'
+
 jobs:
   ping-health:
     runs-on: ubuntu-latest
@@ -14,7 +17,7 @@ jobs:
     steps:
       - name: Ping OpenAttend Backend Health Endpoint & Warm-up
         env:
-          TARGET_URL: ${{ vars.BACKEND_URL || 'https://openattend-vesit.onrender.com' }}
+          TARGET_URL: ${{ env.BACKEND_URL }}
         run: |
           echo "============================================="
           echo "Target Health URL: $TARGET_URL/api/v1/health"

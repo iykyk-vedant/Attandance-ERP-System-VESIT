@@ -6,7 +6,6 @@ import com.vesit.openattend.entity.*;
 import com.vesit.openattend.entity.enums.Role;
 import com.vesit.openattend.entity.enums.SyncRunStatus;
 import com.vesit.openattend.repository.*;
-import com.vesit.openattend.service.sync.SheetsClient;
 import com.vesit.openattend.service.sync.SyncResult;
 import com.vesit.openattend.service.sync.UpsertEngine;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private final SheetsClient sheetsClient;
     private final UpsertEngine upsertEngine;
     private final SubjectRepository subjectRepository;
     private final WorksheetMappingRepository worksheetMappingRepository;

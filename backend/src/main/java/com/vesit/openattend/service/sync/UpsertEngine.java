@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -24,7 +23,6 @@ public class UpsertEngine {
     private final StudentRepository studentRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceHistoryEventRepository attendanceHistoryEventRepository;
-    private final WorksheetMappingRepository worksheetMappingRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional

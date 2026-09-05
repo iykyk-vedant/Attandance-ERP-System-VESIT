@@ -34,7 +34,7 @@ public class ScheduledSyncWorker {
         for (WorksheetMapping mapping : activeMappings) {
             try {
                 Optional<SyncLog> lastLog = syncLogRepository.findFirstByWorksheetMappingIdOrderByStartedAtDesc(mapping.getId());
-                String lastHash = lastLog.map(SyncLog::getContentHash).orElse(null);
+                String lastHash = lastLog.isPresent() ? lastLog.get().getContentHash() : null;
 
                 SyncResult result = upsertEngine.executeSyncRun(mapping, null, lastHash);
                 log.info("ScheduledSyncWorker: Synced mapping {} [{}]: status={}, upserted={}",

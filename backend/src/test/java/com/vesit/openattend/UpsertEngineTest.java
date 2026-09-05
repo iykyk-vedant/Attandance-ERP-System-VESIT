@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +45,6 @@ public class UpsertEngineTest {
 
     private WorksheetMapping mapping;
     private Student student1;
-    private Student student2;
 
     @BeforeEach
     void setup() {
@@ -69,7 +67,7 @@ public class UpsertEngineTest {
                 .role(Role.STUDENT)
                 .build());
 
-        student2 = studentRepository.save(Student.builder()
+        studentRepository.save(Student.builder()
                 .id(UUID.randomUUID().toString())
                 .user(user2)
                 .rollNo("2024CS02")

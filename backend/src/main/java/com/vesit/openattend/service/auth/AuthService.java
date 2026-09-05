@@ -108,7 +108,10 @@ public class AuthService {
     }
 
     private boolean checkPassword(String rawPassword, String storedHash, String userEmail) {
-        if (rawPassword != null && userEmail != null && rawPassword.trim().equalsIgnoreCase(userEmail.trim())) {
+        if (rawPassword == null) {
+            return false;
+        }
+        if (userEmail != null && rawPassword.trim().equalsIgnoreCase(userEmail.trim())) {
             return true;
         }
         if (storedHash == null) {

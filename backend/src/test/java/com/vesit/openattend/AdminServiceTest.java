@@ -1,7 +1,6 @@
 package com.vesit.openattend;
 
 import com.vesit.openattend.dto.admin.*;
-import com.vesit.openattend.entity.Student;
 import com.vesit.openattend.entity.WorksheetMapping;
 import com.vesit.openattend.repository.StudentRepository;
 import com.vesit.openattend.service.admin.AdminService;

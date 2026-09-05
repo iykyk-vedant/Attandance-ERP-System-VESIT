@@ -3,11 +3,9 @@ package com.vesit.openattend.service.attendance;
 import com.vesit.openattend.dto.attendance.*;
 import com.vesit.openattend.entity.AttendanceRecord;
 import com.vesit.openattend.entity.Student;
-import com.vesit.openattend.entity.Subject;
 import com.vesit.openattend.entity.enums.AttendanceStatus;
 import com.vesit.openattend.repository.AttendanceRecordRepository;
 import com.vesit.openattend.repository.StudentRepository;
-import com.vesit.openattend.repository.SubjectRepository;
 import com.vesit.openattend.service.predictor.PredictorResult;
 import com.vesit.openattend.service.predictor.PredictorService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +25,6 @@ import java.util.stream.Collectors;
 public class AttendanceService {
 
     private final StudentRepository studentRepository;
-    private final SubjectRepository subjectRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final PredictorService predictorService;
 
