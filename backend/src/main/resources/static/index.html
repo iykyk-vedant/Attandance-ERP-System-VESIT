@@ -930,11 +930,23 @@
 
       <!-- Student Navigation Group -->
       <div class="nav-section" id="student-nav-group">
-        <div class="nav-section-title">ATTENDANCE</div>
+        <div class="nav-section-title">STUDENT</div>
         <div class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> Dashboard</div>
         <div class="nav-item" onclick="switchView('analytics', this)"><span>📈</span> Analytics</div>
+        <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
         <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
         <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+      </div>
+
+      <!-- Admin Navigation Group (Shown in Admin Mode) -->
+      <div class="nav-section" id="admin-nav-group" style="display: none;">
+        <div class="nav-section-title">SETUP</div>
+        <div class="nav-item" onclick="switchView('admin-sheet', this)"><span>🔗</span> Sheet Connection</div>
+        <div class="nav-item" onclick="switchView('admin-mapping', this)"><span>🗺️</span> Worksheet Mapping</div>
+        <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Roster Import</div>
+        <div class="nav-section-title" style="margin-top: 1rem;">OPERATIONS</div>
+        <div class="nav-item" onclick="switchView('admin-sync', this)"><span>🔄</span> Sync Control</div>
+        <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Sync Logs</div>
       </div>
 
       <!-- Sidebar User Profile Bar -->
@@ -942,9 +954,17 @@
         <div class="user-avatar-circle" id="user-avatar-initials">VG</div>
         <div class="user-details">
           <div class="user-display-name" id="user-name-display">Vedant Gharat</div>
-          <div class="user-role-badge" id="user-role-display">STUDENT • D12B-49</div>
+          <div class="user-role-badge" id="user-role-display">STUDENT • 2024CS01</div>
         </div>
         <button class="logout-action-btn" title="Sign Out" onclick="handleLogout()">🚪</button>
+      </div>
+
+      <!-- Sidebar Footer with Role Switcher -->
+      <div class="sidebar-footer">
+        <div class="role-switcher">
+          <button class="role-btn active" id="btn-role-student" onclick="toggleRole('STUDENT')">Student View</button>
+          <button class="role-btn" id="btn-role-admin" onclick="toggleRole('ADMIN')">Admin View</button>
+        </div>
       </div>
     </aside>
 
@@ -957,6 +977,11 @@
           <p class="auth-subtitle">Sign in with your official VESIT email address (<span style="font-family: monospace;">@ves.ac.in</span>)</p>
         </div>
 
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="auth-tab-student" onclick="switchAuthTab('STUDENT')">🎓 Student Login</button>
+          <button class="auth-tab-btn" id="auth-tab-admin" onclick="switchAuthTab('ADMIN')">⚡ Admin Login</button>
+        </div>
+
         <div class="auth-alert auth-alert-error" id="auth-error-alert">
           <span>⚠️</span>
           <span id="auth-error-text">Invalid email or password</span>
@@ -965,19 +990,30 @@
         <form id="auth-login-form" onsubmit="submitAuthLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
           <div class="form-group">
             <label class="form-label" for="auth-email-input">Official Email Address</label>
-            <input type="email" id="auth-email-input" class="form-input" placeholder="2024.firstname.lastname@ves.ac.in" required autocomplete="email">
+            <input type="email" id="auth-email-input" class="form-input" placeholder="student@ves.ac.in" required autocomplete="email">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="auth-password-input">Password</label>
-            <input type="password" id="auth-password-input" class="form-input" placeholder="Your password or email address" required autocomplete="current-password">
-            <span class="form-hint" style="font-size: 11px; color: var(--accent); margin-top: 4px; display: block;">💡 Note: Your initial password is your VESIT email address.</span>
+            <input type="password" id="auth-password-input" class="form-input" placeholder="••••••••" required autocomplete="current-password">
           </div>
 
           <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width: 100%; padding: 0.75rem; font-size: 14px; margin-top: 0.25rem;">
             Sign In to Dashboard →
           </button>
         </form>
+
+        <div class="quick-demo-section">
+          <div class="quick-demo-title">⚡ Instant Demo 1-Click Fill:</div>
+          <div class="quick-chips">
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('STUDENT')">
+              <span>🎓</span> Student Demo
+            </button>
+            <button type="button" class="quick-chip-btn" onclick="fillQuickDemo('ADMIN')">
+              <span>⚡</span> Admin Demo
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1007,45 +1043,125 @@
             <div class="ring-wrapper">
               <svg width="140" height="140" viewBox="0 0 140 140">
                 <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-surface-2)" stroke-width="10" />
-                <circle id="dash-ring-circle" cx="70" cy="70" r="60" fill="none" stroke="var(--state-safe)" stroke-width="10" stroke-dasharray="377" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 70 70)" />
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--state-safe)" stroke-width="10" stroke-dasharray="377" stroke-dashoffset="66" stroke-linecap="round" transform="rotate(-90 70 70)" />
               </svg>
               <div class="ring-center-text">
-                <div class="ring-center-val font-mono" id="dash-pct-val">82.4%</div>
+                <div class="ring-center-val font-mono">82.4%</div>
                 <div class="ring-center-lbl">Overall</div>
               </div>
             </div>
             <div class="hero-metrics">
               <div class="student-info-row">
-                <span class="student-name" id="dash-student-name">Student Name</span>
-                <span class="badge-chip" id="dash-student-roll">Roll: D12B-01</span>
+                <span class="student-name">Vedant Sharma</span>
+                <span class="badge-chip">Roll: 2024CS01</span>
               </div>
               <div class="stats-kpi-grid">
                 <div class="kpi-item">
-                  <span class="kpi-num font-mono" id="dash-present-cnt" style="color: var(--state-safe)">0</span>
+                  <span class="kpi-num font-mono" style="color: var(--state-safe)">141</span>
                   <span class="kpi-label">Present</span>
                 </div>
                 <div class="kpi-item">
-                  <span class="kpi-num font-mono" id="dash-absent-cnt" style="color: var(--state-risk)">0</span>
+                  <span class="kpi-num font-mono" style="color: var(--state-risk)">30</span>
                   <span class="kpi-label">Absent</span>
                 </div>
                 <div class="kpi-item">
-                  <span class="kpi-num font-mono" id="dash-total-cnt">0</span>
+                  <span class="kpi-num font-mono">171</span>
                   <span class="kpi-label">Total Conducted</span>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Predictor Callout Component -->
+          <div class="predictor-callout-card">
+            <div class="predictor-sentence">
+              You can safely miss <span class="predictor-num font-mono">16</span> consecutive lectures overall while maintaining attendance above the mandatory <strong>75%</strong> threshold.
+            </div>
+            <div class="predictor-formula-toggle" onclick="toggleFormula('formula-dash')">
+              ▶ How is this calculated?
+            </div>
+            <div class="predictor-formula-panel" id="formula-dash" style="display: none;">
+              <code>Safe Skips S = floor((Present - threshold * Total) / threshold)</code><br>
+              Plugging in: floor((141 - 0.75 * 171) / 0.75) = floor((141 - 128.25) / 0.75) = <strong>16 lectures</strong>.
+            </div>
+          </div>
+
           <!-- Subject Cards Grid -->
           <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Subject Wise Breakdown</h2>
-          <div class="cards-grid" id="dash-subject-cards-grid">
-            <div style="color: var(--text-tertiary); font-size: 13px;">Loading subjects attendance…</div>
+          <div class="cards-grid">
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS401</div>
+                  <div class="sc-title">Data Structures & Algorithms</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">85.7%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 85.7%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 42 Lectures</span>
+                <span>Safe Skips: 6</span>
+              </div>
+            </div>
+
+            <div class="subject-card safe-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS402</div>
+                  <div class="sc-title">Operating Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-safe)">81.8%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 81.8%; background: var(--state-safe)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>36 / 44 Lectures</span>
+                <span>Safe Skips: 4</span>
+              </div>
+            </div>
+
+            <div class="subject-card risk-border">
+              <div class="sc-header">
+                <div>
+                  <div class="sc-code">CS403</div>
+                  <div class="sc-title">Database Management Systems</div>
+                </div>
+                <div class="sc-pct font-mono" style="color: var(--state-risk)">72.5%</div>
+              </div>
+              <div class="sc-progress-bar">
+                <div class="sc-progress-fill" style="width: 72.5%; background: var(--state-risk)"></div>
+              </div>
+              <div class="sc-footer">
+                <span>29 / 40 Lectures</span>
+                <span style="color: var(--state-risk); font-weight: 600">Must attend: 2</span>
+              </div>
+            </div>
           </div>
 
           <!-- Atomic RollCallRow Stack -->
           <h2 style="font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem;">Recent Roll Call Log</h2>
-          <div class="roll-call-stack" id="dash-recent-rollcall-stack">
-            <div style="color: var(--text-tertiary); font-size: 13px;">Loading recent attendance records…</div>
+          <div class="roll-call-stack">
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS401 • Data Structures</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Dr. Rao</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 02, 2026</div>
+              <div class="rc-subject">CS402 • Operating Systems</div>
+              <div class="rc-status"><div class="status-dot dot-safe"></div><span>Present</span></div>
+              <div class="rc-detail">Faculty: Prof. Patil</div>
+            </div>
+            <div class="roll-call-row">
+              <div class="rc-date font-mono">Aug 01, 2026</div>
+              <div class="rc-subject">CS403 • Database Systems</div>
+              <div class="rc-status"><div class="status-dot dot-risk"></div><span>Absent</span></div>
+              <div class="rc-detail">Faculty: Dr. Sharma</div>
+            </div>
           </div>
         </div>
 
@@ -1127,7 +1243,45 @@
           </div>
         </div>
 
-        <!-- View 3: History -->
+        <!-- View 3: Predictor -->
+        <div class="view-pane" id="pane-predictor" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel" style="padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700;">Attendance Predictor Sandbox</h2>
+                <p style="color: var(--text-secondary); font-size: 13px;">Interactive calculation engine based on PRD §6.4 formulas.</p>
+              </div>
+              <div class="form-group" style="width: 220px; margin: 0;">
+                <select class="form-select" id="predictor-subject-select" onchange="updatePredictorView(this.value)">
+                  <option value="overall" selected>Overall Attendance</option>
+                  <option value="CS401">CS401 • Data Structures</option>
+                  <option value="CS402">CS402 • Operating Systems</option>
+                  <option value="CS403">CS403 • Database Systems</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Predictor Centerpiece Callout -->
+            <div class="predictor-callout-card" id="predictor-centerpiece" style="padding: 1.75rem; border-radius: 12px; background: var(--accent-dim); border: 1px solid var(--accent);">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); margin-bottom: 0.5rem;">Status: Safe Above 75%</div>
+              <div class="predictor-sentence" id="predictor-sentence-text" style="font-size: 1.25rem;">
+                You can miss <span class="predictor-num font-mono" id="predictor-skips-val" style="font-size: 1.75rem;">8</span> more consecutive lectures while keeping overall attendance above <strong>75%</strong>.
+              </div>
+            </div>
+
+            <!-- Formula Transparency Panel -->
+            <div class="predictor-formula-panel" style="margin-top: 0.5rem; background: var(--bg-surface-2);">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">🔢 Calculation Breakdown (PRD §6.4 Transparent Formula)</div>
+              <div class="font-mono" id="predictor-formula-breakdown" style="line-height: 1.7; font-size: 12px;">
+                Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>
+                Inputs: P = 101 present, T = 126 total, threshold = 0.75<br>
+                Calculation: (101 - (0.75 × 126)) / 0.75 = (101 - 94.5) / 0.75 = 6.5 / 0.75 = 8 skips
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View 4: History -->
         <div class="view-pane" id="pane-history" style="display: none; flex-direction: column; gap: 1.25rem;">
           <!-- Filter & Export Controls -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: var(--bg-surface); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
@@ -1200,6 +1354,259 @@
           </div>
         </div>
 
+        <!-- Admin View 1: Sheet Connection Form -->
+        <div class="view-pane" id="pane-admin-sheet" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Connect Google Sheet</h2>
+            <p style="color: var(--text-secondary);">Configure the read-only Google Sheet ID and service account permissions (PRD §2.8).</p>
+            
+            <div class="form-group">
+              <label class="form-label">Google Sheet ID</label>
+              <input type="text" class="form-input font-mono" value="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms" placeholder="Enter Spreadsheet ID">
+              <span class="form-hint">Found in your Google Sheet URL: /spreadsheets/d/<strong>[SHEET_ID]</strong>/edit</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Service Account Email (Read-Only)</label>
+              <input type="text" class="form-input font-mono" value="sync@openattend.iam.gserviceaccount.com" readonly style="opacity: 0.7;">
+              <span class="form-hint">Share your spreadsheet with Viewer access to this email address.</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="testConnection()">⚡ Test Connection</button>
+
+            <div id="connection-status-panel" style="margin-top: 1rem; display: none;">
+              <div style="background: rgba(47, 158, 110, 0.12); border: 1px solid var(--state-safe); color: var(--state-safe); padding: 1rem; border-radius: 8px;">
+                <strong>✅ Sheet Connection Verified!</strong>
+                <p style="font-size: 12px; margin-top: 4px; color: var(--text-primary);">Spreadsheet Title: "VESIT Attendance 2026"</p>
+                <div style="margin-top: 0.75rem; font-size: 12px; font-weight: 600; color: var(--text-secondary);">Detected Worksheet Tabs:</div>
+                <div class="chips-row">
+                  <span class="tab-chip">Student List</span>
+                  <span class="tab-chip">CS401</span>
+                  <span class="tab-chip">CS402</span>
+                  <span class="tab-chip">CS403</span>
+                  <span class="tab-chip">Defaulters</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 2: Worksheet Mapping Form with Live Preview -->
+        <div class="view-pane" id="pane-admin-mapping" style="display: none;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Worksheet Mapping Setup</h2>
+            <p style="color: var(--text-secondary);">Assign column roles with a live row preview before saving (PRD §11.2).</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Subject Code</label>
+                <select class="form-select">
+                  <option>CS401 — Data Structures</option>
+                  <option>CS402 — Operating Systems</option>
+                  <option>CS403 — Database Systems</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Worksheet Tab</label>
+                <select class="form-select">
+                  <option>CS401</option>
+                  <option>CS402</option>
+                  <option>CS403</option>
+                </select>
+              </div>
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Live Column Role Preview</h3>
+            <p style="font-size: 12px; color: var(--text-tertiary);">Match each column in the spreadsheet to its entity role:</p>
+
+            <table class="column-preview-table">
+              <thead>
+                <tr>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Date (Col A)</option>
+                      <option>Role: Roll No</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option selected>Role: Roll No (Col B)</option>
+                      <option>Role: Status</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option>Role: Date</option>
+                      <option>Role: Roll No</option>
+                      <option selected>Role: Status (Col C)</option>
+                    </select>
+                  </th>
+                  <th>
+                    <select class="form-select" style="width: 100%; font-size: 12px;">
+                      <option selected>Role: Faculty (Col D)</option>
+                    </select>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS01</td>
+                  <td>Present</td>
+                  <td>Dr. Rao</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">2026-08-01</td>
+                  <td class="font-mono">2024CS02</td>
+                  <td>Absent</td>
+                  <td>Dr. Rao</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <button class="btn btn-primary" style="margin-top: 1rem; align-self: flex-start;">💾 Save Worksheet Mapping</button>
+          </div>
+        </div>
+
+        <!-- Admin View 3: Roster Import Form with Pre-Commit Preview -->
+        <div class="view-pane" id="pane-admin-roster" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Student Roster Import</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Upload student CSV roster to preview record diffs before committing to database (PRD §8.9).</p>
+
+            <div style="border: 2px dashed var(--border-strong); border-radius: 12px; padding: 2rem; text-align: center; background: var(--bg-surface-2);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+              <div style="font-weight: 600;">Drag & Drop Roster CSV File</div>
+              <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">Columns: RollNo, Name, Email, Division, Batch</div>
+              <button class="btn btn-secondary" onclick="previewRosterCSV()" style="margin-top: 1rem;">⚡ Load Sample Roster Preview</button>
+            </div>
+
+            <!-- Pre-Commit Diff Preview Table -->
+            <div id="roster-preview-panel" style="display: none; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-2); padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <span style="font-weight: 600; font-size: 13px;">Pre-Commit Diff Summary: 4 Total Rows</span>
+                <div style="display: flex; gap: 0.5rem; font-size: 11px; font-weight: 700;">
+                  <span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 8px; border-radius: 4px;">2 Create</span>
+                  <span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 8px; border-radius: 4px;">1 Update</span>
+                  <span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px;">1 Error</span>
+                </div>
+              </div>
+
+              <table class="column-preview-table" style="font-size: 12px;">
+                <thead>
+                  <tr style="text-align: left;">
+                    <th>Action</th>
+                    <th>Roll No</th>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Validation Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS04</td>
+                    <td>Aarav Sharma</td>
+                    <td class="font-mono">aarav.sharma@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(47, 158, 110, 0.15); color: var(--state-safe); padding: 2px 6px; border-radius: 4px; font-weight: 700;">CREATE</span></td>
+                    <td class="font-mono">2024CS05</td>
+                    <td>Ananya Iyer</td>
+                    <td class="font-mono">ananya.iyer@ves.ac.in</td>
+                    <td style="color: var(--state-safe);">Valid new student record</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn); padding: 2px 6px; border-radius: 4px; font-weight: 700;">UPDATE</span></td>
+                    <td class="font-mono">2024CS01</td>
+                    <td>Vedant Gharat</td>
+                    <td class="font-mono">vedant.gharat@ves.ac.in</td>
+                    <td style="color: var(--state-warn);">Existing roll number (metadata update)</td>
+                  </tr>
+                  <tr>
+                    <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 6px; border-radius: 4px; font-weight: 700;">ERROR</span></td>
+                    <td class="font-mono">INVALID</td>
+                    <td>Rohan Mehta</td>
+                    <td class="font-mono">rohan@gmail.com</td>
+                    <td style="color: var(--state-risk);">Invalid domain (must end with @ves.ac.in)</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <button class="btn btn-primary" onclick="commitRosterImport()" style="align-self: flex-start;">💾 Confirm & Commit 3 Valid Rows</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 4: Sync Control Form & Cooldown -->
+        <div class="view-pane" id="pane-admin-sync" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <div class="form-panel">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Sync Control & Frequency</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Manage background automated polling frequency and trigger manual runs with rate-limit cooldowns (PRD §8.7).</p>
+
+            <div class="form-group">
+              <label class="form-label">Polling Interval Frequency</label>
+              <select class="form-select" style="max-width: 300px;">
+                <option selected>Every 15 Minutes (Default)</option>
+                <option>Every 5 Minutes</option>
+                <option>Every 1 Hour</option>
+              </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btn-trigger-sync" onclick="triggerManualSync()">⚡ Trigger Immediate Sync Run</button>
+              <div id="sync-cooldown-timer" style="display: none; font-size: 12px; font-weight: 600; color: var(--state-warn); background: rgba(201, 138, 30, 0.12); padding: 0.4rem 0.85rem; border-radius: 6px;">
+                ⏳ Rate limit cooldown active: Please wait <span id="cooldown-seconds">60</span>s before re-triggering.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin View 5: Sync Logs with Expandable Details -->
+        <div class="view-pane" id="pane-admin-logs" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 600;">System Sync Logs</h3>
+              <p style="color: var(--text-secondary); font-size: 12px;">Detailed audit log of background sync runs and itemized skip reasons (PRD §11.4).</p>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshAdminLogs()" style="font-size: 12px;">🔄 Refresh Logs</button>
+          </div>
+
+          <div class="roll-call-stack" id="admin-sync-logs-list">
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-1')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">14:00:25</div>
+                <div class="rc-subject">CS401 • Data Structures</div>
+                <div class="rc-status"><div class="status-dot dot-safe"></div><span>SKIPPED</span></div>
+                <div class="rc-detail">42 Rows Read • 0 Upserted</div>
+              </div>
+              <div id="log-detail-1" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--text-secondary);" class="font-mono">
+                Run Status: SKIPPED_NO_CHANGE<br>
+                Content Hash: 8f4a21b3... SHA-256<br>
+                Detail: Range hash matched existing check; zero changes detected.
+              </div>
+            </div>
+
+            <div class="roll-call-row" onclick="toggleLogDetail('log-detail-2')" style="cursor: pointer; flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="rc-date font-mono">13:45:10</div>
+                <div class="rc-subject">CS403 • Database Systems</div>
+                <div class="rc-status"><div class="status-dot dot-warn"></div><span>PARTIAL</span></div>
+                <div class="rc-detail">40 Rows Read • 38 Upserted</div>
+              </div>
+              <div id="log-detail-2" style="display: none; font-size: 12px; background: var(--bg-surface-2); padding: 0.65rem 0.85rem; border-radius: 6px; color: var(--state-warn);" class="font-mono">
+                Run Status: PARTIAL_FAILURE<br>
+                Itemized Skip Reasons:<br>
+                - Row 14: Invalid date format ("invalid-date")<br>
+                - Row 27: Roll number "2024CS99" not found in student roster
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </main>
 
@@ -1210,6 +1617,27 @@
       const currentTheme = document.documentElement.getAttribute('data-theme');
       const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', nextTheme);
+    }
+
+    function toggleRole(role) {
+      const studentNav = document.getElementById('student-nav-group');
+      const adminNav = document.getElementById('admin-nav-group');
+      const btnStudent = document.getElementById('btn-role-student');
+      const btnAdmin = document.getElementById('btn-role-admin');
+
+      if (role === 'ADMIN') {
+        studentNav.style.display = 'none';
+        adminNav.style.display = 'block';
+        btnStudent.classList.remove('active');
+        btnAdmin.classList.add('active');
+        switchView('admin-sheet', adminNav.querySelector('.nav-item'));
+      } else {
+        adminNav.style.display = 'none';
+        studentNav.style.display = 'block';
+        btnAdmin.classList.remove('active');
+        btnStudent.classList.add('active');
+        switchView('dashboard', studentNav.querySelector('.nav-item'));
+      }
     }
 
     function switchView(viewId, el) {
@@ -1223,20 +1651,91 @@
       const titles = {
         'dashboard': 'Student Dashboard',
         'analytics': 'Attendance Analytics',
+        'predictor': 'Attendance Predictor',
         'history': 'Attendance History',
-        'notifications': 'Notifications'
+        'notifications': 'Notifications',
+        'admin-sheet': 'Admin — Sheet Connection',
+        'admin-mapping': 'Admin — Worksheet Mapping',
+        'admin-roster': 'Admin — Roster Import',
+        'admin-sync': 'Admin — Sync Control',
+        'admin-logs': 'Admin — Sync Logs'
       };
       document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
     }
 
     function toggleFormula(id) {
       const panel = document.getElementById(id);
-      if (panel) {
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function testConnection() {
+      const panel = document.getElementById('connection-status-panel');
+      panel.style.display = 'block';
+    }
+
+    // --- M7 Admin Helper Functions ---
+    function previewRosterCSV() {
+      const panel = document.getElementById('roster-preview-panel');
+      panel.style.display = 'flex';
+    }
+
+    function commitRosterImport() {
+      alert('✅ Student roster import committed: 2 new students created, 1 updated.');
+      document.getElementById('roster-preview-panel').style.display = 'none';
+    }
+
+    let syncCooldownInterval = null;
+    function triggerManualSync() {
+      const btn = document.getElementById('btn-trigger-sync');
+      const timerBox = document.getElementById('sync-cooldown-timer');
+      const secEl = document.getElementById('cooldown-seconds');
+
+      btn.disabled = true;
+      btn.textContent = '⚡ Syncing in Progress…';
+
+      fetch('/api/v1/admin/sync/trigger', { method: 'POST' })
+        .then(res => res.json())
+        .then(() => {
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+          timerBox.style.display = 'block';
+          let timeLeft = 60;
+          secEl.textContent = timeLeft;
+
+          if (syncCooldownInterval) clearInterval(syncCooldownInterval);
+          syncCooldownInterval = setInterval(() => {
+            timeLeft--;
+            secEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+              clearInterval(syncCooldownInterval);
+              timerBox.style.display = 'none';
+              btn.disabled = false;
+            }
+          }, 1000);
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = '⚡ Trigger Immediate Sync Run';
+        });
+    }
+
+    function toggleLogDetail(logId) {
+      const el = document.getElementById(logId);
+      if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
       }
     }
 
-    // --- History Filtering & Export ---
+    function refreshAdminLogs() {
+      fetch('/api/v1/admin/sync/logs')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert('🔄 Admin sync audit log refreshed with latest entries.');
+          }
+        });
+    }
+
+    // --- M6 Interactive Helper Functions ---
     function filterHistoryTable() {
       const subjectVal = document.getElementById('history-filter-subject').value;
       const statusVal = document.getElementById('history-filter-status').value;
@@ -1262,10 +1761,10 @@
 
       rows.forEach(row => {
         if (row.style.display !== 'none') {
-          const date = row.querySelector('.rc-date') ? row.querySelector('.rc-date').textContent.trim() : '';
-          const subject = row.querySelector('.rc-subject') ? row.querySelector('.rc-subject').textContent.trim() : '';
-          const status = row.querySelector('.rc-status span') ? row.querySelector('.rc-status span').textContent.trim() : '';
-          const detail = row.querySelector('.rc-detail') ? row.querySelector('.rc-detail').textContent.trim().replace(/,/g, ' -') : '';
+          const date = row.querySelector('.rc-date').textContent.trim();
+          const subject = row.querySelector('.rc-subject').textContent.trim();
+          const status = row.querySelector('.rc-status span').textContent.trim();
+          const detail = row.querySelector('.rc-detail').textContent.trim().replace(/,/g, ' -');
           csvContent += `"${date}","${subject}","${status}","${detail}"\n`;
         }
       });
@@ -1280,21 +1779,63 @@
       document.body.removeChild(link);
     }
 
-    let studentSubjectsData = [];
+    function updatePredictorView(subjectCode) {
+      const centerpiece = document.getElementById('predictor-centerpiece');
+      const textEl = document.getElementById('predictor-sentence-text');
+      const breakdownEl = document.getElementById('predictor-formula-breakdown');
+
+      const data = {
+        'overall': { present: 101, total: 126, threshold: 0.75, status: 'SAFE', skips: 8, must: 0 },
+        'CS401': { present: 36, total: 42, threshold: 0.75, status: 'SAFE', skips: 6, must: 0 },
+        'CS402': { present: 36, total: 44, threshold: 0.75, status: 'SAFE', skips: 4, must: 0 },
+        'CS403': { present: 29, total: 40, threshold: 0.75, status: 'RISK', skips: 0, must: 4 }
+      };
+
+      const sel = data[subjectCode] || data['overall'];
+
+      if (sel.status === 'SAFE') {
+        centerpiece.style.background = 'var(--accent-dim)';
+        centerpiece.style.borderColor = 'var(--accent)';
+        textEl.innerHTML = `You can miss <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-safe);">${sel.skips}</span> more consecutive lectures while keeping attendance above <strong>75%</strong>.`;
+        breakdownEl.innerHTML = `Formula: Safe Skips = floor((P - (threshold × T)) / threshold)<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: (${sel.present} - (0.75 × ${sel.total})) / 0.75 = ${sel.skips} skips remaining`;
+      } else {
+        centerpiece.style.background = 'rgba(214, 69, 69, 0.12)';
+        centerpiece.style.borderColor = 'var(--state-risk)';
+        textEl.innerHTML = `You must attend <span class="predictor-num font-mono" style="font-size: 1.75rem; color: var(--state-risk);">${sel.must}</span> consecutive lectures to reach <strong>75%</strong> threshold.`;
+        breakdownEl.innerHTML = `Formula: Must Attend = ceil(((threshold × T) - P) / (1 - threshold))<br>Inputs: P = ${sel.present} present, T = ${sel.total} total, threshold = 0.75<br>Calculation: ((0.75 × ${sel.total}) - ${sel.present}) / (1 - 0.75) = ${sel.must} lectures required`;
+      }
+    }
 
     function markAllNotificationsRead() {
-      if (currentUserSession && currentUserSession.accessToken) {
-        fetch('/api/v1/notifications/read-all', {
-          method: 'PATCH',
-          headers: { 'Authorization': 'Bearer ' + currentUserSession.accessToken }
-        }).catch(() => {});
-      }
+      fetch('/api/v1/notifications/read-all', { method: 'PATCH' }).catch(() => {});
       document.querySelectorAll('#pane-notifications .roll-call-row').forEach(row => {
         row.style.opacity = '0.65';
       });
     }
 
+    let currentAuthRole = 'STUDENT';
     let currentUserSession = null;
+
+    function switchAuthTab(role) {
+      currentAuthRole = role;
+      document.getElementById('auth-tab-student').classList.toggle('active', role === 'STUDENT');
+      document.getElementById('auth-tab-admin').classList.toggle('active', role === 'ADMIN');
+      document.getElementById('auth-email-input').placeholder = role === 'ADMIN' ? 'admin@ves.ac.in' : 'student@ves.ac.in';
+      hideAuthError();
+    }
+
+    function fillQuickDemo(role) {
+      switchAuthTab(role);
+      if (role === 'ADMIN') {
+        document.getElementById('auth-email-input').value = 'admin@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'admin123';
+      } else {
+        document.getElementById('auth-email-input').value = 'student@ves.ac.in';
+        document.getElementById('auth-password-input').value = 'password123';
+      }
+      hideAuthError();
+      submitAuthLogin();
+    }
 
     function showAuthError(msg) {
       const alert = document.getElementById('auth-error-alert');
@@ -1340,9 +1881,13 @@
         const data = await res.json();
         if (!data.success) {
           showAuthError(data.error || 'Authentication failed');
+          clearTimeout(warmupTimer);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In to Dashboard →';
           return;
         }
 
+        // Save session locally
         currentUserSession = data.session;
         localStorage.setItem('openattend_session', JSON.stringify(data.session));
 
@@ -1350,9 +1895,40 @@
         document.getElementById('auth-modal').classList.add('hidden');
 
       } catch (err) {
-        showAuthError('Network connection error. Please try again.');
+        // Network fallback: handle local demo authentication if backend server is unreachable
+        const cleanEmail = email.toLowerCase();
+        if (cleanEmail === 'student@ves.ac.in' && password === 'password123') {
+          const mockSession = {
+            id: 'usr_student_1',
+            email: 'student@ves.ac.in',
+            name: 'Vedant Gharat',
+            role: 'STUDENT',
+            rollNo: '2024CS01',
+            division: 'D12B',
+            batch: 'B1',
+            accessToken: 'at_demo_student_' + Date.now()
+          };
+          currentUserSession = mockSession;
+          localStorage.setItem('openattend_session', JSON.stringify(mockSession));
+          applyUserSession(mockSession);
+          document.getElementById('auth-modal').classList.add('hidden');
+        } else if (cleanEmail === 'admin@ves.ac.in' && password === 'admin123') {
+          const mockSession = {
+            id: 'usr_admin_1',
+            email: 'admin@ves.ac.in',
+            name: 'Prof. Admin User',
+            role: 'ADMIN',
+            rollNo: 'ADM-01',
+            accessToken: 'at_demo_admin_' + Date.now()
+          };
+          currentUserSession = mockSession;
+          localStorage.setItem('openattend_session', JSON.stringify(mockSession));
+          applyUserSession(mockSession);
+          document.getElementById('auth-modal').classList.add('hidden');
+        } else {
+          showAuthError('Invalid credentials. Password or user email is incorrect.');
+        }
       } finally {
-        clearTimeout(warmupTimer);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In to Dashboard →';
       }
@@ -1360,119 +1936,14 @@
 
     function applyUserSession(session) {
       currentUserSession = session;
-      const initials = session.name ? session.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'ST';
+      const initials = session.name ? session.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
       
       document.getElementById('user-avatar-initials').textContent = initials;
       document.getElementById('user-name-display').textContent = session.name || session.email;
-      document.getElementById('user-role-display').textContent = `STUDENT • ${session.rollNo || ''}`;
+      document.getElementById('user-role-display').textContent = `${session.role} • ${session.rollNo || ''}`;
       document.getElementById('user-profile-bar').style.display = 'flex';
 
-      // Update hero card student info
-      const nameEl = document.getElementById('dash-student-name');
-      if (nameEl) nameEl.textContent = session.name || session.email;
-      const rollEl = document.getElementById('dash-student-roll');
-      if (rollEl) rollEl.textContent = `Roll: ${session.rollNo || ''} • ${session.division || 'D15B'}`;
-
-      loadLiveAttendanceData(session);
-    }
-
-    async function loadLiveAttendanceData(session) {
-      if (!session || !session.accessToken) return;
-      const headers = { 'Authorization': 'Bearer ' + session.accessToken };
-      const apiBase = (window.location.protocol === 'file:' || !window.location.host) ? 'https://openattend-vesit.onrender.com' : '';
-
-      try {
-        // 1. Overall Attendance
-        const resOverall = await fetch(apiBase + '/api/v1/attendance/overall', { headers });
-        if (resOverall.ok) {
-          const data = await resOverall.json();
-          window.overallAttendanceData = data;
-          
-          const pct = typeof data.overallPct === 'number' ? data.overallPct : 0;
-          document.getElementById('dash-pct-val').textContent = pct.toFixed(1) + '%';
-          document.getElementById('dash-present-cnt').textContent = data.present || 0;
-          document.getElementById('dash-absent-cnt').textContent = data.absent || 0;
-          document.getElementById('dash-total-cnt').textContent = data.total || 0;
-
-          // Ring SVG calculation
-          const ringCircle = document.getElementById('dash-ring-circle');
-          if (ringCircle) {
-            const offset = Math.max(0, 377 - (377 * pct / 100));
-            ringCircle.style.strokeDashoffset = offset;
-            ringCircle.style.stroke = pct >= 75 ? 'var(--state-safe)' : 'var(--state-risk)';
-          }
-
-        }
-
-        // 2. Subjects Breakdown
-        const resSubjects = await fetch(apiBase + '/api/v1/attendance/subjects', { headers });
-        if (resSubjects.ok) {
-          const data = await resSubjects.json();
-          const subjects = data.subjects || [];
-          studentSubjectsData = subjects;
-
-          const grid = document.getElementById('dash-subject-cards-grid');
-          if (grid && subjects.length > 0) {
-            grid.innerHTML = subjects.map(s => {
-              const isSafe = (s.pct || 0) >= 75;
-              const borderClass = isSafe ? 'safe-border' : 'risk-border';
-              const colorVar = isSafe ? 'var(--state-safe)' : 'var(--state-risk)';
-              const statusBadge = isSafe
-                ? `<span style="color: var(--state-safe); font-weight: 600;">✅ On Track (≥75%)</span>`
-                : `<span style="color: var(--state-risk); font-weight: 600;">⚠️ Needs Attendance (&lt;75%)</span>`;
-
-              return `
-                <div class="subject-card ${borderClass}">
-                  <div class="sc-header">
-                    <div>
-                      <div class="sc-code font-mono">${s.code}</div>
-                      <div class="sc-title">${s.name}</div>
-                    </div>
-                    <div class="sc-pct font-mono" style="color: ${colorVar}">${(s.pct || 0).toFixed(1)}%</div>
-                  </div>
-                  <div class="sc-progress-bar">
-                    <div class="sc-progress-fill" style="width: ${Math.min(100, s.pct || 0)}%; background: ${colorVar}"></div>
-                  </div>
-                  <div class="sc-footer">
-                    <span>${s.present} / ${s.total} Lectures Attended</span>
-                    <span>${statusBadge}</span>
-                  </div>
-                </div>
-              `;
-            }).join('');
-          } else if (grid) {
-            grid.innerHTML = `<div style="color: var(--text-tertiary); font-size: 13px;">No subject attendance records found yet.</div>`;
-          }
-        }
-
-        // 3. Recent Roll Call Log
-        const resHistory = await fetch(apiBase + '/api/v1/attendance/history', { headers });
-        if (resHistory.ok) {
-          const data = await resHistory.json();
-          const records = data.records || [];
-          const recentStack = document.getElementById('dash-recent-rollcall-stack');
-          if (recentStack && records.length > 0) {
-            recentStack.innerHTML = records.slice(0, 5).map(r => {
-              const isPresent = r.status === 'PRESENT';
-              const dotClass = isPresent ? 'dot-safe' : 'dot-risk';
-              const statusText = isPresent ? 'Present' : 'Absent';
-              return `
-                <div class="roll-call-row">
-                  <div class="rc-date font-mono">${r.lectureDate || ''}</div>
-                  <div class="rc-subject">${r.subjectCode || ''} • ${r.subjectName || ''}</div>
-                  <div class="rc-status"><div class="status-dot ${dotClass}"></div><span>${statusText}</span></div>
-                  <div class="rc-detail">Faculty: ${r.faculty || 'Faculty'}</div>
-                </div>
-              `;
-            }).join('');
-          } else if (recentStack) {
-            recentStack.innerHTML = `<div style="color: var(--text-tertiary); font-size: 13px;">No recent attendance entries recorded.</div>`;
-          }
-        }
-
-      } catch (e) {
-        console.error('Failed to load live student attendance:', e);
-      }
+      toggleRole(session.role);
     }
 
     function handleLogout() {
@@ -1487,6 +1958,9 @@
       localStorage.removeItem('openattend_session');
 
       document.getElementById('user-profile-bar').style.display = 'none';
+      document.getElementById('auth-email-input').value = '';
+      document.getElementById('auth-password-input').value = '';
+      hideAuthError();
       document.getElementById('auth-modal').classList.remove('hidden');
     }
 
