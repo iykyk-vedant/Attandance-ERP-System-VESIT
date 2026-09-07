@@ -9,5 +9,8 @@ import java.util.List;
 @Repository
 public interface AttendanceHistoryEventRepository extends JpaRepository<AttendanceHistoryEvent, String> {
     List<AttendanceHistoryEvent> findByAttendanceRecordId(String attendanceRecordId);
+
+    List<AttendanceHistoryEvent> findByAttendanceRecordIdOrderByChangedAtAsc(String attendanceRecordId);
+
     List<AttendanceHistoryEvent> findBySyncLogId(String syncLogId);
 }
