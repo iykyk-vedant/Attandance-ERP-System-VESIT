@@ -45,6 +45,9 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/v1/faculty/**").hasAnyRole("FACULTY", "CLASS_TEACHER", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        // Defaulter lists carry the whole cohort's names, roll numbers and
+                        // percentages — restricted to the roles that publish them.
+                        .requestMatchers("/api/v1/reports/**").hasAnyRole("CLASS_TEACHER", "ADMIN", "SUPER_ADMIN")
                         .anyRequest().permitAll() // Allow student endpoints to resolve user from Bearer token
                 )
                 .headers(headers -> headers
