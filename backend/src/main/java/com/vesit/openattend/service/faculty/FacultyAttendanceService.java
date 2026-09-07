@@ -4,6 +4,7 @@ import com.vesit.openattend.dto.faculty.*;
 import com.vesit.openattend.entity.*;
 import com.vesit.openattend.entity.enums.AttendanceStatus;
 import com.vesit.openattend.entity.enums.Role;
+import com.vesit.openattend.exception.CorrectionWindowExpiredException;
 import com.vesit.openattend.repository.*;
 import com.vesit.openattend.service.sync.SyncDiffer;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +23,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FacultyAttendanceService {
+
+    /** Sessions stay editable by the submitting faculty for this many hours after submission. */
+    public static final long CORRECTION_WINDOW_HOURS = 48;
+
+    /** Roles allowed to unlock and correct a session after the window has closed. */
+    private static final Set<String> UNLOCK_ROLES = Set.of(
+            "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_CLASS_TEACHER"
+    );
 
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
@@ -194,12 +204,13 @@ public class FacultyAttendanceService {
             }
             attendanceRecordRepository.save(record);
 
-            // Audit history
+            // Audit history — no reason required on the initial submission
             AttendanceHistoryEvent event = AttendanceHistoryEvent.builder()
                     .id(UUID.randomUUID().toString())
                     .attendanceRecord(record)
                     .previousStatus(null)
                     .newStatus(status)
+                    .modifiedBy(faculty.getEmail())
                     .build();
             attendanceHistoryEventRepository.save(event);
         }
@@ -208,19 +219,32 @@ public class FacultyAttendanceService {
     }
 
     @Transactional
-    public LectureSessionResponse correctAttendance(String facultyEmail, String sessionId, AttendanceCorrectionRequest request) {
+    public LectureSessionResponse correctAttendance(String callerEmail, Collection<String> callerRoles, String sessionId,
+                                                    AttendanceCorrectionRequest request) {
         LectureSession session = lectureSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found: " + sessionId));
 
-        // 48-Hour correction window check
-        LocalDateTime deadline = session.getSubmittedAt().plusHours(48);
-        if (LocalDateTime.now().isAfter(deadline)) {
-            throw new IllegalStateException("48-Hour correction window has expired for this lecture session. Please contact the administrator.");
-        }
-
-        // Justification reason validation (>= 10 characters)
+        // Justification reason validation (>= 10 characters) — mirrors the bean validation on the DTO
+        // so the rule also holds for internal callers that bypass the controller.
         if (request.getCorrectionReason() == null || request.getCorrectionReason().trim().length() < 10) {
             throw new IllegalArgumentException("Correction reason must be at least 10 characters explaining the modification.");
+        }
+        String reason = request.getCorrectionReason().trim();
+
+        // 48-Hour correction window. Past the window the session is locked and only an
+        // admin or the class teacher may unlock it.
+        long hoursElapsed = ChronoUnit.HOURS.between(session.getSubmittedAt(), LocalDateTime.now());
+        boolean withinWindow = hoursElapsed <= CORRECTION_WINDOW_HOURS;
+        boolean unlockOverride = !withinWindow && hasUnlockPrivilege(callerRoles);
+
+        if (!withinWindow && !unlockOverride) {
+            throw new CorrectionWindowExpiredException(
+                    "48-Hour correction window has expired for this lecture session (" + hoursElapsed
+                            + "h elapsed). Only an administrator or the class teacher can unlock it.");
+        }
+
+        if (unlockOverride) {
+            log.warn("Locked session {} corrected after {}h by privileged user {}", sessionId, hoursElapsed, callerEmail);
         }
 
         Set<String> newAbsentSet = new HashSet<>(request.getUpdatedAbsentStudentIds() != null ? request.getUpdatedAbsentStudentIds() : Collections.emptyList());
@@ -242,12 +266,14 @@ public class FacultyAttendanceService {
                 }
                 attendanceRecordRepository.save(rec);
 
-                // Audit history trail
+                // Immutable audit trail: who changed what, when, and why
                 AttendanceHistoryEvent event = AttendanceHistoryEvent.builder()
                         .id(UUID.randomUUID().toString())
                         .attendanceRecord(rec)
                         .previousStatus(oldStatus)
                         .newStatus(newStatus)
+                        .modifiedBy(callerEmail)
+                        .mandatoryReason(reason)
                         .build();
                 attendanceHistoryEventRepository.save(event);
             }
@@ -260,13 +286,27 @@ public class FacultyAttendanceService {
         }
 
         String auditNote = (session.getCorrectionReason() != null ? session.getCorrectionReason() + " | " : "")
-                + "[" + LocalDateTime.now() + " by " + facultyEmail + "]: " + request.getCorrectionReason().trim();
+                + "[" + LocalDateTime.now() + " by " + callerEmail + (unlockOverride ? " (ADMIN UNLOCK)" : "") + "]: " + reason;
         session.setCorrectionReason(auditNote);
         session.setLastModifiedAt(LocalDateTime.now());
 
         lectureSessionRepository.save(session);
 
         return mapToResponse(session, new ArrayList<>(newAbsentSet));
+    }
+
+    /**
+     * True when the caller holds a role that may unlock a session past the 48-hour window.
+     * Roles are compared with the {@code ROLE_} prefix used by the JWT filter's authorities.
+     */
+    private boolean hasUnlockPrivilege(Collection<String> callerRoles) {
+        if (callerRoles == null) {
+            return false;
+        }
+        return callerRoles.stream()
+                .filter(Objects::nonNull)
+                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                .anyMatch(UNLOCK_ROLES::contains);
     }
 
     public List<LectureSessionResponse> getSessionHistory(String facultyEmail, String subjectId) {
@@ -293,7 +333,7 @@ public class FacultyAttendanceService {
     }
 
     private LectureSessionResponse mapToResponse(LectureSession session, List<String> absentees) {
-        boolean canCorrect = LocalDateTime.now().isBefore(session.getSubmittedAt().plusHours(48));
+        boolean canCorrect = ChronoUnit.HOURS.between(session.getSubmittedAt(), LocalDateTime.now()) <= CORRECTION_WINDOW_HOURS;
 
         return LectureSessionResponse.builder()
                 .id(session.getId())
