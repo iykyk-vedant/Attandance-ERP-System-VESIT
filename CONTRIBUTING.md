@@ -66,3 +66,15 @@ Our automated test suite verifies:
 - **One PR per Issue**: Keep pull requests focused on a single issue for faster reviews.
 - **Strict Read-Only Boundary**: Never introduce Google API write scopes or write methods.
 - **Environment Safety**: Never commit real secret keys or `.env` files.
+
+
+## Onboarding & Local Setup
+
+To quickly spin up the environment, run:
+
+```bash
+# 1. Start the database and backend services
+docker compose up -d
+
+# 2. Boot the application
+mvn spring-boot:run
