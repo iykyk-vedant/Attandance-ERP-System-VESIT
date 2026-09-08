@@ -9,6 +9,8 @@ import com.vesit.openattend.entity.enums.Role;
 import com.vesit.openattend.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,6 +60,9 @@ public class FacultyAttendanceIntegrationTest {
 
     @Autowired
     private AttendanceHistoryEventRepository historyEventRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private User facultyUser;
     private Subject subject;
@@ -231,10 +237,168 @@ public class FacultyAttendanceIntegrationTest {
         assertEquals(AttendanceStatus.PRESENT, rec2.getStatus());
 
         // Verify history has audit trail
-        List<AttendanceHistoryEvent> history2 = historyEventRepository.findByAttendanceRecordId(rec2.getId());
+        List<AttendanceHistoryEvent> history2 = historyEventRepository.findByAttendanceRecordIdOrderByChangedAtAsc(rec2.getId());
         assertEquals(2, history2.size());
-        assertEquals(AttendanceStatus.ABSENT, history2.get(1).getPreviousStatus());
-        assertEquals(AttendanceStatus.PRESENT, history2.get(1).getNewStatus());
+
+        AttendanceHistoryEvent correctionEvent = correctionEventFor(rec2.getId());
+        assertEquals(AttendanceStatus.ABSENT, correctionEvent.getPreviousStatus());
+        assertEquals(AttendanceStatus.PRESENT, correctionEvent.getNewStatus());
+        assertEquals("prof.sharma@ves.ac.in", correctionEvent.getModifiedBy());
+        assertEquals("Student arrived late with approved medical note from Dean", correctionEvent.getMandatoryReason());
+        assertNotNull(correctionEvent.getChangedAt());
+    }
+
+    @Test
+    @WithMockUser(username = "prof.sharma@ves.ac.in", roles = "FACULTY")
+    void testStandardFacultyBlockedAfterCorrectionWindow() throws Exception {
+        String sessionId = createBackdatedSession(3, 49);
+
+        AttendanceCorrectionRequest req = AttendanceCorrectionRequest.builder()
+                .correctionReason("Marked the wrong batch during the practical slot")
+                .updatedAbsentStudentIds(List.of())
+                .build();
+
+        mockMvc.perform(put("/api/v1/faculty/attendance/" + sessionId + "/correct")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message", containsString("48-Hour correction window has expired")));
+
+        // Locked session must remain untouched
+        AttendanceRecord rec1 = attendanceRecordRepository
+                .findByStudentIdAndSubjectIdAndLectureDateAndSessionIndex(student1.getId(), subject.getId(), LocalDate.now(), 3)
+                .orElseThrow();
+        assertEquals(AttendanceStatus.ABSENT, rec1.getStatus());
+    }
+
+    @Test
+    @WithMockUser(username = "hod.cmpn@ves.ac.in", roles = "CLASS_TEACHER")
+    void testClassTeacherCanUnlockExpiredSession() throws Exception {
+        String sessionId = createBackdatedSession(4, 72);
+
+        AttendanceCorrectionRequest req = AttendanceCorrectionRequest.builder()
+                .correctionReason("Verified medical certificate submitted to the department office")
+                .updatedAbsentStudentIds(List.of())
+                .build();
+
+        mockMvc.perform(put("/api/v1/faculty/attendance/" + sessionId + "/correct")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.session.absentCount").value(0))
+                .andExpect(jsonPath("$.session.presentCount").value(2));
+
+        AttendanceRecord rec1 = attendanceRecordRepository
+                .findByStudentIdAndSubjectIdAndLectureDateAndSessionIndex(student1.getId(), subject.getId(), LocalDate.now(), 4)
+                .orElseThrow();
+        assertEquals(AttendanceStatus.PRESENT, rec1.getStatus());
+
+        // Audit row records the unlocking caller, the reason and the timestamp
+        AttendanceHistoryEvent unlockEvent = correctionEventFor(rec1.getId());
+        assertEquals("hod.cmpn@ves.ac.in", unlockEvent.getModifiedBy());
+        assertEquals("Verified medical certificate submitted to the department office", unlockEvent.getMandatoryReason());
+        assertEquals(AttendanceStatus.ABSENT, unlockEvent.getPreviousStatus());
+        assertEquals(AttendanceStatus.PRESENT, unlockEvent.getNewStatus());
+        assertNotNull(unlockEvent.getChangedAt());
+    }
+
+    /** The single audit row produced by a correction — corrections always carry a previous status. */
+    private AttendanceHistoryEvent correctionEventFor(String attendanceRecordId) {
+        List<AttendanceHistoryEvent> corrections = historyEventRepository
+                .findByAttendanceRecordIdOrderByChangedAtAsc(attendanceRecordId).stream()
+                .filter(e -> e.getPreviousStatus() != null)
+                .toList();
+        assertEquals(1, corrections.size(), "expected exactly one correction audit row");
+        return corrections.get(0);
+    }
+
+    @Test
+    @WithMockUser(username = "admin@ves.ac.in", roles = "ADMIN")
+    void testAdminCanUnlockExpiredSession() throws Exception {
+        String sessionId = createBackdatedSession(5, 200);
+
+        AttendanceCorrectionRequest req = AttendanceCorrectionRequest.builder()
+                .correctionReason("Registrar approved retrospective attendance amendment")
+                .updatedAbsentStudentIds(List.of(student2.getId()))
+                .build();
+
+        mockMvc.perform(put("/api/v1/faculty/attendance/" + sessionId + "/correct")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.session.absentCount").value(1));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@ves.ac.in", roles = "ADMIN")
+    void testUnlockStillRequiresMandatoryReason() throws Exception {
+        String sessionId = createBackdatedSession(6, 96);
+
+        AttendanceCorrectionRequest req = AttendanceCorrectionRequest.builder()
+                .correctionReason("typo")
+                .updatedAbsentStudentIds(List.of())
+                .build();
+
+        mockMvc.perform(put("/api/v1/faculty/attendance/" + sessionId + "/correct")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    /**
+     * Persists a session (student1 ABSENT, student2 PRESENT) and rewinds its submitted_at
+     * by {@code hoursAgo} so the 48-hour window can be exercised without waiting.
+     */
+    private String createBackdatedSession(int sessionIndex, long hoursAgo) {
+        LectureSession session = lectureSessionRepository.save(LectureSession.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(subject)
+                .faculty(facultyUser)
+                .division("D12A")
+                .batch(null)
+                .sessionDate(LocalDate.now())
+                .sessionIndex(sessionIndex)
+                .sessionType("LECTURE")
+                .topicCovered("Backdated session")
+                .totalStudents(2)
+                .presentCount(1)
+                .absentCount(1)
+                .build());
+
+        persistRecord(session, student1, AttendanceStatus.ABSENT, sessionIndex);
+        persistRecord(session, student2, AttendanceStatus.PRESENT, sessionIndex);
+
+        entityManager.flush();
+        entityManager.createNativeQuery("UPDATE lecture_sessions SET submitted_at = ? WHERE id = ?")
+                .setParameter(1, LocalDateTime.now().minusHours(hoursAgo))
+                .setParameter(2, session.getId())
+                .executeUpdate();
+        entityManager.clear();
+
+        return session.getId();
+    }
+
+    private void persistRecord(LectureSession session, Student student, AttendanceStatus status, int sessionIndex) {
+        AttendanceRecord record = attendanceRecordRepository.save(AttendanceRecord.builder()
+                .id(UUID.randomUUID().toString())
+                .student(student)
+                .subject(subject)
+                .lectureSession(session)
+                .lectureDate(LocalDate.now())
+                .sessionIndex(sessionIndex)
+                .status(status)
+                .faculty(facultyUser.getEmail())
+                .build());
+
+        historyEventRepository.save(AttendanceHistoryEvent.builder()
+                .id(UUID.randomUUID().toString())
+                .attendanceRecord(record)
+                .previousStatus(null)
+                .newStatus(status)
+                .modifiedBy(facultyUser.getEmail())
+                .build());
     }
 
     @Test
