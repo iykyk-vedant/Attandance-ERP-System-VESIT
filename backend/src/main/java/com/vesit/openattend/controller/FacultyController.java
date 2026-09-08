@@ -1,18 +1,16 @@
 package com.vesit.openattend.controller;
 
 import com.vesit.openattend.dto.faculty.*;
+import com.vesit.openattend.security.CallerRoles;
 import com.vesit.openattend.service.faculty.FacultyAttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/faculty")
@@ -51,7 +49,7 @@ public class FacultyController {
             Authentication authentication
     ) {
         String email = authentication != null ? authentication.getName() : "faculty@ves.ac.in";
-        LectureSessionResponse session = facultyAttendanceService.submitAttendance(email, request);
+        LectureSessionResponse session = facultyAttendanceService.submitAttendance(email, CallerRoles.of(authentication), request);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Attendance recorded successfully",
@@ -66,22 +64,12 @@ public class FacultyController {
             Authentication authentication
     ) {
         String email = authentication != null ? authentication.getName() : "faculty@ves.ac.in";
-        LectureSessionResponse session = facultyAttendanceService.correctAttendance(email, resolveRoles(authentication), sessionId, request);
+        LectureSessionResponse session = facultyAttendanceService.correctAttendance(email, CallerRoles.of(authentication), sessionId, request);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Attendance corrected successfully",
                 "session", session
         ));
-    }
-
-    /** Granted authorities of the caller (e.g. ROLE_FACULTY, ROLE_CLASS_TEACHER), empty when unauthenticated. */
-    private Set<String> resolveRoles(Authentication authentication) {
-        if (authentication == null || authentication.getAuthorities() == null) {
-            return Set.of();
-        }
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
     }
 
     @GetMapping("/sessions")

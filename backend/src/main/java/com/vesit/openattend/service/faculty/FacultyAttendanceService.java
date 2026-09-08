@@ -5,7 +5,9 @@ import com.vesit.openattend.entity.*;
 import com.vesit.openattend.entity.enums.AttendanceStatus;
 import com.vesit.openattend.entity.enums.Role;
 import com.vesit.openattend.exception.CorrectionWindowExpiredException;
+import com.vesit.openattend.exception.MarkingNotAuthorizedException;
 import com.vesit.openattend.repository.*;
+import com.vesit.openattend.service.attendance.ProxyDelegationService;
 import com.vesit.openattend.service.sync.SyncDiffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,9 @@ public class FacultyAttendanceService {
             "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_CLASS_TEACHER"
     );
 
+    /** Roles allowed to mark any cohort without an allocation or a proxy delegation. */
+    private static final Set<String> MARK_ANY_ROLES = Set.of("ROLE_ADMIN", "ROLE_SUPER_ADMIN");
+
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
     private final StudentRepository studentRepository;
@@ -39,7 +44,9 @@ public class FacultyAttendanceService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceHistoryEventRepository attendanceHistoryEventRepository;
     private final FacultySubjectAllocationRepository allocationRepository;
+    private final ProxyDelegationService proxyDelegationService;
 
+    @Transactional(readOnly = true)
     public List<FacultySubjectDto> getMySubjects(String facultyEmail) {
         User user = userRepository.findByEmail(facultyEmail).orElse(null);
         List<FacultySubjectAllocation> allocations = Collections.emptyList();
@@ -53,9 +60,10 @@ public class FacultyAttendanceService {
             allocations = allocationRepository.findByDivision("D12B");
         }
 
+        List<FacultySubjectDto> subjects;
         if (allocations.isEmpty()) {
             // Fallback to all registered subjects
-            return subjectRepository.findAll().stream().map(sub -> {
+            subjects = subjectRepository.findAll().stream().map(sub -> {
                 int count = (int) studentRepository.count();
                 return FacultySubjectDto.builder()
                         .subjectId(sub.getId())
@@ -67,19 +75,52 @@ public class FacultyAttendanceService {
                         .lastSessionDate(LocalDate.now().toString())
                         .build();
             }).collect(Collectors.toList());
+        } else {
+            subjects = allocations.stream().map(alloc -> {
+                Subject sub = alloc.getSubject();
+                List<Student> students = getRosterStudents(alloc.getDivision(), alloc.getBatch());
+                return FacultySubjectDto.builder()
+                        .subjectId(sub.getId())
+                        .subjectCode(sub.getCode())
+                        .subjectName(sub.getName())
+                        .division(alloc.getDivision())
+                        .batch(alloc.getBatch())
+                        .totalStudents(students.size())
+                        .lastSessionDate(LocalDate.now().toString())
+                        .build();
+            }).collect(Collectors.toList());
         }
 
-        return allocations.stream().map(alloc -> {
-            Subject sub = alloc.getSubject();
-            List<Student> students = getRosterStudents(alloc.getDivision(), alloc.getBatch());
+        subjects.addAll(delegatedSubjectsToday(user));
+        return subjects;
+    }
+
+    /**
+     * Lectures handed to this faculty as a substitute for today, appended to their own
+     * allocations so the delegated slot shows up on the dashboard on the day it is taken.
+     */
+    private List<FacultySubjectDto> delegatedSubjectsToday(User user) {
+        if (user == null) {
+            return List.of();
+        }
+        LocalDate today = LocalDate.now();
+
+        return proxyDelegationService.activeDelegationsOn(user.getId(), today).stream().map(delegation -> {
+            Subject sub = delegation.getSubject();
+            List<Student> students = getRosterStudents(delegation.getDivision(), delegation.getBatch());
             return FacultySubjectDto.builder()
                     .subjectId(sub.getId())
                     .subjectCode(sub.getCode())
                     .subjectName(sub.getName())
-                    .division(alloc.getDivision())
-                    .batch(alloc.getBatch())
+                    .division(delegation.getDivision())
+                    .batch(delegation.getBatch())
                     .totalStudents(students.size())
-                    .lastSessionDate(LocalDate.now().toString())
+                    .lastSessionDate(today.toString())
+                    .proxy(true)
+                    .proxyAssignmentId(delegation.getId())
+                    .proxyForFacultyEmail(delegation.getOriginalFaculty().getEmail())
+                    .proxySessionIndex(delegation.getSessionIndex())
+                    .proxyReason(delegation.getReason())
                     .build();
         }).collect(Collectors.toList());
     }
@@ -109,7 +150,8 @@ public class FacultyAttendanceService {
     }
 
     @Transactional
-    public LectureSessionResponse submitAttendance(String facultyEmail, AttendanceSubmissionRequest request) {
+    public LectureSessionResponse submitAttendance(String facultyEmail, Collection<String> callerRoles,
+                                                   AttendanceSubmissionRequest request) {
         User faculty = userRepository.findByEmail(facultyEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Faculty user not found: " + facultyEmail));
 
@@ -120,6 +162,12 @@ public class FacultyAttendanceService {
         int sessionIndex = request.getSessionIndex() != null ? request.getSessionIndex() : 1;
         String division = request.getDivision().trim();
         String batch = (request.getBatch() != null && !request.getBatch().trim().isEmpty()) ? request.getBatch().trim() : null;
+
+        // Either the allocated teacher marks their own slot, or a substitute marks it under an
+        // active delegation covering exactly this slot. Checked before anything is disclosed
+        // about the slot itself.
+        MarkingAuthorization authorization =
+                resolveMarkingAuthorization(faculty, callerRoles, subject, division, batch, date, sessionIndex);
 
         // Idempotency check: verify if session already submitted
         Optional<LectureSession> existingSession;
@@ -169,9 +217,19 @@ public class FacultyAttendanceService {
                 .payloadHash(payloadHash)
                 .submittedAt(LocalDateTime.now())
                 .lastModifiedAt(LocalDateTime.now())
+                // faculty above is taken_by; these two record that a substitute took the slot.
+                .isProxy(authorization.proxy())
+                .originalFaculty(authorization.originalFaculty())
+                .proxyAssignment(authorization.delegation())
                 .build();
 
         lectureSessionRepository.save(session);
+
+        if (authorization.proxy()) {
+            log.info("Proxy session {}: {} ({}) on {} [Slot {}] taken by {} for {}",
+                    session.getId(), subject.getCode(), division, date, sessionIndex, faculty.getEmail(),
+                    authorization.originalFaculty() != null ? authorization.originalFaculty().getEmail() : "unknown");
+        }
 
         // Upsert AttendanceRecord for every student in the cohort
         for (Student student : roster) {
@@ -216,6 +274,66 @@ public class FacultyAttendanceService {
         }
 
         return mapToResponse(session, new ArrayList<>(absentSet));
+    }
+
+    /**
+     * Who this session is recorded against.
+     *
+     * @param proxy           true when the marking faculty is not the allocated subject teacher
+     * @param originalFaculty the allocated subject teacher, set only on a proxy session
+     * @param delegation      the delegation that granted the authorisation, null when the
+     *                        session is marked by an admin without one
+     */
+    private record MarkingAuthorization(boolean proxy, User originalFaculty, ProxyAssignment delegation) {
+
+        static MarkingAuthorization allocated() {
+            return new MarkingAuthorization(false, null, null);
+        }
+    }
+
+    /**
+     * Decides whether {@code faculty} may mark this slot and how the session is attributed.
+     *
+     * <p>Authorised when the faculty is allocated to the cohort, holds an active proxy
+     * delegation covering exactly this slot, or is an admin. A cohort with no allocation at all
+     * stays open — this mirrors the unallocated fallback in {@link #getMySubjects(String)} so a
+     * subject the dashboard offers is never rejected here.
+     */
+    private MarkingAuthorization resolveMarkingAuthorization(User faculty, Collection<String> callerRoles,
+                                                             Subject subject, String division, String batch,
+                                                             LocalDate date, Integer sessionIndex) {
+        List<FacultySubjectAllocation> owners = allocationRepository
+                .findBySubjectIdAndDivision(subject.getId(), division).stream()
+                .filter(alloc -> alloc.getBatch() == null || alloc.getBatch().equals(batch))
+                .toList();
+
+        boolean allocatedToCaller = owners.stream()
+                .anyMatch(alloc -> alloc.getFaculty().getId().equals(faculty.getId()));
+        if (allocatedToCaller) {
+            return MarkingAuthorization.allocated();
+        }
+
+        Optional<ProxyAssignment> delegation = proxyDelegationService.findActiveDelegation(
+                faculty.getId(), subject.getId(), division, batch, date, sessionIndex);
+        if (delegation.isPresent()) {
+            return new MarkingAuthorization(true, delegation.get().getOriginalFaculty(), delegation.get());
+        }
+
+        if (owners.isEmpty()) {
+            log.warn("Unallocated cohort marked by {}: {} ({}) — no faculty allocation exists for this slot",
+                    faculty.getEmail(), subject.getCode(), division);
+            return MarkingAuthorization.allocated();
+        }
+
+        if (hasRole(callerRoles, MARK_ANY_ROLES)) {
+            // Admins may always step in, but the session is still recorded as a stand-in.
+            return new MarkingAuthorization(true, owners.get(0).getFaculty(), null);
+        }
+
+        throw new MarkingNotAuthorizedException(
+                "You are not allocated to " + subject.getCode() + " (" + division
+                        + ") and hold no proxy delegation for this slot on " + date
+                        + " [Slot " + sessionIndex + "]. Ask the subject teacher to raise a proxy assignment.");
     }
 
     @Transactional
@@ -300,15 +418,21 @@ public class FacultyAttendanceService {
      * Roles are compared with the {@code ROLE_} prefix used by the JWT filter's authorities.
      */
     private boolean hasUnlockPrivilege(Collection<String> callerRoles) {
+        return hasRole(callerRoles, UNLOCK_ROLES);
+    }
+
+    /** True when any caller authority is in {@code allowed}, with or without the {@code ROLE_} prefix. */
+    private boolean hasRole(Collection<String> callerRoles, Set<String> allowed) {
         if (callerRoles == null) {
             return false;
         }
         return callerRoles.stream()
                 .filter(Objects::nonNull)
                 .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
-                .anyMatch(UNLOCK_ROLES::contains);
+                .anyMatch(allowed::contains);
     }
 
+    @Transactional(readOnly = true)
     public List<LectureSessionResponse> getSessionHistory(String facultyEmail, String subjectId) {
         List<LectureSession> sessions;
         if (subjectId != null && !subjectId.trim().isEmpty()) {
@@ -354,6 +478,15 @@ public class FacultyAttendanceService {
                 .lastModifiedAt(session.getLastModifiedAt().toString())
                 .canCorrect(canCorrect)
                 .correctionReason(session.getCorrectionReason())
+                // Audit trail: who actually took the lecture, and for whom.
+                .takenByFacultyEmail(session.getFaculty() != null ? session.getFaculty().getEmail() : null)
+                .proxy(Boolean.TRUE.equals(session.getIsProxy()))
+                .originalFacultyEmail(session.getOriginalFaculty() != null
+                        ? session.getOriginalFaculty().getEmail() : null)
+                .proxyAssignmentId(session.getProxyAssignment() != null
+                        ? session.getProxyAssignment().getId() : null)
+                .proxyReason(session.getProxyAssignment() != null
+                        ? session.getProxyAssignment().getReason() : null)
                 .build();
     }
 }

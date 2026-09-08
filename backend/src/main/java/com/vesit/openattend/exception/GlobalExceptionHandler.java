@@ -20,6 +20,16 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(ProxyDelegationDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleProxyDelegationDenied(ProxyDelegationDeniedException ex) {
+        return body(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(MarkingNotAuthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleMarkingNotAuthorized(MarkingNotAuthorizedException ex) {
+        return body(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()

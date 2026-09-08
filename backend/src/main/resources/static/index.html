@@ -1764,6 +1764,13 @@
             </div>
           </div>
 
+          <!-- Substitute lecture banner: shown only when the selected slot was delegated to this teacher -->
+          <div id="marking-proxy-banner" style="display: none; padding: 0.7rem 0.9rem; border-radius: 10px;
+               background: var(--accent-dim); border: 1px solid var(--accent); font-size: 13px; color: var(--text-primary);">
+            <strong>🔁 Proxy lecture.</strong>
+            <span id="marking-proxy-detail"></span>
+          </div>
+
           <!-- Sticky Live Attendance Counter Bar -->
           <div class="counter-bar-card">
             <div class="counter-stat">
@@ -2117,7 +2124,6 @@
         if (facultyNav) facultyNav.style.display = 'block';
         document.getElementById('btn-role-faculty')?.classList.add('active');
         switchView('faculty-marking', facultyNav.querySelector('.nav-item'));
-        loadFacultyCohort();
       } else if (role === 'CLASS_TEACHER') {
         if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
@@ -2160,7 +2166,7 @@
       document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
 
       if (viewId === 'faculty-marking') {
-        loadFacultyCohort();
+        initFacultyMarking();
       } else if (viewId === 'faculty-history') {
         loadFacultySessions();
       } else if (viewId === 'ct-defaulters') {
@@ -2629,7 +2635,95 @@
       } catch (e) { /* nothing cached yet */ }
     }
 
+    /**
+     * Subjects offered in the marking dropdown, in dropdown order. Entries flagged `proxy` are
+     * lectures delegated to this teacher for today, so a substitute can mark the slot they were
+     * handed without it appearing under anyone else's name.
+     */
+    let facultySubjectCatalog = [];
+
+    async function initFacultyMarking() {
+      await loadMarkingSubjects();
+      applySelectedSubjectContext();
+      await loadFacultyCohort();
+    }
+
+    async function loadMarkingSubjects() {
+      const select = document.getElementById('marking-subject-select');
+      if (!select || !navigator.onLine) return;
+
+      try {
+        const res = await fetch('/api/v1/faculty/my-subjects', { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const subjects = data.subjects || [];
+        if (subjects.length === 0) return; // keep the static options rather than emptying the dropdown
+
+        const previous = select.value;
+        facultySubjectCatalog = subjects;
+        select.innerHTML = '';
+
+        subjects.forEach((s) => {
+          const opt = document.createElement('option');
+          opt.value = s.subjectId;
+          opt.textContent = (s.proxy ? '🔁 ' : '') + s.subjectCode + ' — ' + s.subjectName +
+            (s.proxy ? ' (Proxy for ' + s.proxyForFacultyEmail + ')' : '');
+          select.appendChild(opt);
+        });
+
+        // A subject can appear twice (own allocation and a delegation), so restore by index.
+        const previousIndex = subjects.findIndex((s) => s.subjectId === previous);
+        select.selectedIndex = previousIndex >= 0 ? previousIndex : 0;
+      } catch (e) { /* offline: the static options stay usable */ }
+    }
+
+    /** Points the cohort, slot and proxy banner at whichever subject is selected. */
+    function applySelectedSubjectContext() {
+      const select = document.getElementById('marking-subject-select');
+      const entry = facultySubjectCatalog[select ? select.selectedIndex : -1];
+      const banner = document.getElementById('marking-proxy-banner');
+
+      if (!entry) {
+        if (banner) banner.style.display = 'none';
+        return;
+      }
+
+      selectCohortOption(entry.division, entry.batch);
+
+      if (entry.proxy && entry.proxySessionIndex) {
+        const slot = document.getElementById('marking-slot-select');
+        if (slot) slot.value = String(entry.proxySessionIndex);
+      }
+
+      if (banner) {
+        banner.style.display = entry.proxy ? 'block' : 'none';
+        if (entry.proxy) {
+          document.getElementById('marking-proxy-detail').textContent =
+            'You are taking ' + entry.subjectCode + ' for ' + entry.proxyForFacultyEmail +
+            (entry.proxySessionIndex ? ' (Slot ' + entry.proxySessionIndex + ' only)' : ' (all slots today)') +
+            '. Reason: ' + (entry.proxyReason || '—') +
+            '. The session is recorded against your name and flagged as a proxy.';
+        }
+      }
+    }
+
+    /** Selects the cohort for a subject, adding the option when the division is not listed yet. */
+    function selectCohortOption(division, batch) {
+      const select = document.getElementById('marking-division-select');
+      if (!select || !division) return;
+
+      const value = batch ? division + '-' + batch : division;
+      if (!Array.from(select.options).some((o) => o.value === value)) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = batch ? (division + ' • Batch ' + batch) : (division + ' (Full Division)');
+        select.appendChild(opt);
+      }
+      select.value = value;
+    }
+
     function onMarkingSubjectChange() {
+      applySelectedSubjectContext();
       loadFacultyCohort();
     }
 
