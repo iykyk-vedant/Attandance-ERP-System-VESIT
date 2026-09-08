@@ -201,3 +201,18 @@ erDiagram
 
 5. **NAAC / NBA Accreditation Diary Integration**:
    - Every lecture submission records `topic_covered` and `lecture_type` directly in the database, automatically compiling real-time Course Diary syllabus progress metrics.
+
+6. **Offline-First Classroom Marking (PWA)**:
+   - A service worker (`sw.js`) precaches the app shell, so the PWA launches with **zero connectivity**. Navigations are network-first with a cached-shell fallback; `/api/**` is never served from the cache.
+   - Today's assigned rosters are pulled into IndexedDB at login (`precacheTodayRosters`), so the marking grid renders fully offline.
+   - Submissions made while offline are persisted to the IndexedDB store `pending_submissions` and replayed automatically on `window.online` (and via Background Sync where supported).
+   - Replay leans on the natural-key idempotency above: a `409 Conflict` means the session already reached the server, so the queued row is dropped rather than retried. `401/403/5xx` keep the row queued; other `4xx` mark it `REJECTED` with the server's reason for the teacher to review.
+   - Cached rosters are cleared on logout (student PII on shared devices); **unsent attendance in `pending_submissions` is deliberately preserved**.
+
+### Client-Side Offline Store (`openattend-offline`, IndexedDB v1)
+
+| Store | Key | Contents |
+|---|---|---|
+| `rosters` | `division::batch` | Precached cohort roster + `cachedAt` |
+| `pending_submissions` | generated `id` | Queued submission `payload`, `status` (`PENDING` / `REJECTED`), `attempts`, `lastError`, `queuedAt` |
+| `meta` | `key` | Bookkeeping, e.g. `rosters_precached_at` |
