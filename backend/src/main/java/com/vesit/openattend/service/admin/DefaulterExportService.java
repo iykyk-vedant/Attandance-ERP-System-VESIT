@@ -43,6 +43,7 @@ public class DefaulterExportService {
             cells.add(row.getName());
             cells.add(String.valueOf(row.getTotalConducted()));
             cells.add(String.valueOf(row.getTotalAttended()));
+            cells.add(String.valueOf(row.getTotalDutyPresent()));
             cells.add(plain(row.getOverallPercentage()));
 
             for (SubjectColumnDto column : report.getSubjects()) {
@@ -82,12 +83,13 @@ public class DefaulterExportService {
                 sheetRow.createCell(1).setCellValue(nullSafe(row.getName()));
                 sheetRow.createCell(2).setCellValue(row.getTotalConducted());
                 sheetRow.createCell(3).setCellValue(row.getTotalAttended());
+                sheetRow.createCell(4).setCellValue(row.getTotalDutyPresent());
 
-                Cell overall = sheetRow.createCell(4);
+                Cell overall = sheetRow.createCell(5);
                 overall.setCellValue(toDouble(row.getOverallPercentage()));
                 overall.setCellStyle(percentStyle);
 
-                int columnIndex = 5;
+                int columnIndex = 6;
                 for (SubjectColumnDto column : report.getSubjects()) {
                     SubjectBreakdownDto breakdown = row.getSubjects().get(column.getCode());
                     Cell cell = sheetRow.createCell(columnIndex++);
@@ -127,7 +129,7 @@ public class DefaulterExportService {
 
     private List<String> headerCells(DefaulterReportResponse report) {
         List<String> headers = new ArrayList<>(
-                List.of("Roll No", "Name", "Total Conducted", "Total Attended", "Overall %"));
+                List.of("Roll No", "Name", "Total Conducted", "Total Attended", "Duty (OD)", "Overall %"));
         for (SubjectColumnDto column : report.getSubjects()) {
             headers.add(column.getCode() + " %");
         }

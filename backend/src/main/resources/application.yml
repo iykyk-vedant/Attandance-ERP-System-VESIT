@@ -16,6 +16,12 @@ spring:
       data-source-properties:
         prepareThreshold: 0
         preparedStatementCacheQueries: 0
+  servlet:
+    multipart:
+      # A scanned OD letter or a phone photo of a medical certificate. Bounded here as well as
+      # in LeaveProofStorageService so an oversized upload is rejected before it is buffered.
+      max-file-size: 5MB
+      max-request-size: 6MB
   jpa:
     hibernate:
       ddl-auto: validate

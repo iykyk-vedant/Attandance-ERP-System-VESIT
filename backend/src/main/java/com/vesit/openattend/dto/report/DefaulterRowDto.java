@@ -22,6 +22,10 @@ public class DefaulterRowDto {
     private String division;
     private int totalConducted;
     private int totalAttended;
+
+    /** The approved OD / medical-leave share of {@link #totalAttended}, across every subject. */
+    private int totalDutyPresent;
+
     private BigDecimal overallPercentage;
 
     /** Subject code -> breakdown. Absent key means the student is not enrolled in that subject. */

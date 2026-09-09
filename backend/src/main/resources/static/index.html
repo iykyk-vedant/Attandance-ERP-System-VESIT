@@ -1239,6 +1239,7 @@
         <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
         <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
         <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+        <div class="nav-item" onclick="switchView('leave', this)"><span>📝</span> OD / Medical Leave</div>
       </div>
 
       <!-- Faculty Navigation Group -->
@@ -1251,6 +1252,7 @@
       <!-- Class Teacher Navigation Group -->
       <div class="nav-section" id="ct-nav-group" style="display: none;">
         <div class="nav-section-title">DIVISION MGMT</div>
+        <div class="nav-item" onclick="switchView('leave-approvals', this)"><span>🗂️</span> OD / Leave Approvals</div>
         <div class="nav-item" onclick="switchView('ct-defaulters', this)"><span>📑</span> Defaulter Notice (<75%)</div>
         <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Master Roster Upload</div>
       </div>
@@ -1687,6 +1689,102 @@
           </div>
         </div>
 
+        <!-- View 6: Paperless OD / Medical Leave (Student) -->
+        <div class="view-pane" id="pane-leave" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Official Duty &amp; Medical Leave</h3>
+            <p style="color: var(--text-secondary); font-size: 12px;">
+              Attach the event letter, invite or medical certificate once. Approved leave is credited
+              as duty-present and counts towards your percentage — no paper letter to carry round campus.
+            </p>
+          </div>
+
+          <form class="form-panel" id="leave-submit-form" onsubmit="submitLeaveRequest(event)"
+                style="padding: 1.25rem 1.5rem; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem;">
+              <div class="form-group">
+                <label class="form-label" for="leave-type-select">Leave Type</label>
+                <select class="form-select" id="leave-type-select" required>
+                  <option value="OFFICIAL_DUTY">Official Duty (hackathon, sports, fest)</option>
+                  <option value="MEDICAL">Medical / Sick Leave</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="leave-from-input">From Date</label>
+                <input type="date" class="form-input font-mono" id="leave-from-input" required onchange="syncLeaveToDate()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="leave-to-input">To Date <span style="font-weight: 400; color: var(--text-tertiary);">(inclusive)</span></label>
+                <input type="date" class="form-input font-mono" id="leave-to-input" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-event-input">Event / Reason Title</label>
+              <input type="text" class="form-input" id="leave-event-input" maxlength="255" required
+                     placeholder="e.g. Smart India Hackathon Grand Finale, UTSAV organising committee, Viral fever" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-reason-input">Details <span style="font-weight: 400; color: var(--text-tertiary);">(optional)</span></label>
+              <textarea class="form-input" id="leave-reason-input" rows="2" maxlength="2000"
+                        placeholder="Anything the approving teacher should know."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-proof-input">Proof Attachment <span style="color: var(--state-risk);">*</span></label>
+              <input type="file" class="form-input" id="leave-proof-input" required
+                     accept="application/pdf,image/jpeg,image/png,image/webp" />
+              <span style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                PDF, JPEG, PNG or WebP, up to 5 MB. Scanned letters and phone photos both work.
+              </span>
+            </div>
+
+            <div id="leave-feedback-banner" style="display: none; padding: 0.85rem 1rem; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
+            <button type="submit" class="btn btn-primary" id="leave-submit-btn" style="font-size: 14px; padding: 0.75rem 1.25rem;">
+              📤 Submit for Approval
+            </button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.05rem; font-weight: 600;">My Requests</h3>
+            <button class="btn btn-secondary" onclick="loadMyLeaveRequests()" style="font-size: 12px;">🔄 Refresh</button>
+          </div>
+          <div class="roll-call-stack" id="my-leave-stack"></div>
+        </div>
+
+        <!-- Class Teacher View: OD / Medical Leave Approval Queue -->
+        <div class="view-pane" id="pane-leave-approvals" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">🗂️ OD &amp; Medical Leave Approvals</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                One click decides it. Approving credits the student's absences in the window as
+                duty-present and recalculates their percentage and defaulter status immediately.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="leave-queue-status">Queue</label>
+                <select class="form-select" id="leave-queue-status" onchange="loadLeaveApprovalQueue()" style="font-size: 13px;">
+                  <option value="PENDING">Pending decisions</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="ALL">All requests</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="loadLeaveApprovalQueue()" style="font-size: 13px;">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div id="leave-approval-banner" style="display: none; padding: 0.85rem 1rem; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
+          <div class="roll-call-stack" id="leave-approval-stack"></div>
+        </div>
+
         <!-- Faculty View 1: Classroom Attendance Marking (High-Speed Absentees Mode) -->
         <div class="view-pane" id="pane-faculty-marking" style="display: none; flex-direction: column; gap: 1.25rem;">
           <div class="admin-hero-banner" style="max-height: 140px;">
@@ -1977,6 +2075,7 @@
                   <th>Student Name</th>
                   <th>Total Lectures</th>
                   <th>Attended</th>
+                  <th>Duty (OD)</th>
                   <th>Overall Attendance</th>
                   <th>Shortfall</th>
                   <th>Status</th>
@@ -2123,24 +2222,33 @@
       if (role === 'FACULTY') {
         if (facultyNav) facultyNav.style.display = 'block';
         document.getElementById('btn-role-faculty')?.classList.add('active');
-        switchView('faculty-marking', facultyNav.querySelector('.nav-item'));
+        switchView('faculty-marking', navItemFor('faculty-marking'));
       } else if (role === 'CLASS_TEACHER') {
         if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
         document.getElementById('btn-role-ct')?.classList.add('active');
-        switchView('ct-defaulters', ctNav.querySelector('.nav-item'));
+        switchView('ct-defaulters', navItemFor('ct-defaulters'));
         renderDefaultersTable();
       } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
         if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
         if (adminNav) adminNav.style.display = 'block';
         document.getElementById('btn-role-admin')?.classList.add('active');
-        switchView('admin-roster', ctNav.querySelectorAll('.nav-item')[1]);
+        switchView('admin-roster', navItemFor('admin-roster'));
       } else {
         if (studentNav) studentNav.style.display = 'block';
         document.getElementById('btn-role-student')?.classList.add('active');
-        switchView('dashboard', studentNav.querySelector('.nav-item'));
+        switchView('dashboard', navItemFor('dashboard'));
       }
+    }
+
+    /**
+     * The sidebar entry for a view, found by the view it opens rather than by its position, so
+     * adding an item to a nav group never silently highlights the wrong row.
+     */
+    function navItemFor(viewId) {
+      return Array.from(document.querySelectorAll('.nav-item'))
+        .find(item => (item.getAttribute('onclick') || '').includes("'" + viewId + "'")) || null;
     }
 
     function switchView(viewId, el) {
@@ -2157,6 +2265,8 @@
         'predictor': 'Attendance Predictor',
         'history': 'Attendance History',
         'notifications': 'Notifications',
+        'leave': 'Student — Paperless OD & Medical Leave',
+        'leave-approvals': 'Teacher — OD & Medical Leave Approvals',
         'faculty-marking': 'Faculty — Live Classroom Attendance (Absentees Mode)',
         'faculty-history': 'Faculty — Recorded Sessions & 48h Corrections',
         'ct-defaulters': 'Class Teacher — Defaulter Notice (<75%)',
@@ -2169,6 +2279,10 @@
         initFacultyMarking();
       } else if (viewId === 'faculty-history') {
         loadFacultySessions();
+      } else if (viewId === 'leave') {
+        loadMyLeaveRequests();
+      } else if (viewId === 'leave-approvals') {
+        loadLeaveApprovalQueue();
       } else if (viewId === 'ct-defaulters') {
         renderDefaultersTable();
       }
@@ -3147,32 +3261,389 @@
       loadFacultySessions();
     }
 
-    function renderDefaultersTable() {
+    /* ============================================================================
+       PAPERLESS OD / MEDICAL LEAVE
+       A student files one application with its proof attached; a teacher approves or
+       rejects it in one click. Approval credits the absences inside the window as
+       duty-present, so the percentage and the defaulter list move with the decision.
+       ============================================================================ */
+
+    const LEAVE_TYPE_LABELS = { OFFICIAL_DUTY: 'Official Duty', MEDICAL: 'Medical Leave' };
+    const LEAVE_STATUS_DOTS = { PENDING: 'dot-warn', APPROVED: 'dot-safe', REJECTED: 'dot-risk' };
+
+    /** Escapes text before it goes into innerHTML; event names and notes are free text. */
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function showLeaveBanner(elementId, message, tone) {
+      const banner = document.getElementById(elementId);
+      if (!banner) return;
+      const palette = {
+        ok: ['rgba(47, 158, 110, 0.15)', 'var(--state-safe)'],
+        error: ['rgba(214, 69, 69, 0.12)', 'var(--state-risk)']
+      };
+      const [background, colour] = palette[tone] || palette.ok;
+      banner.style.display = 'block';
+      banner.style.background = background;
+      banner.style.border = '1px solid ' + colour;
+      banner.style.color = colour;
+      banner.innerHTML = message;
+    }
+
+    function hideLeaveBanner(elementId) {
+      const banner = document.getElementById(elementId);
+      if (banner) banner.style.display = 'none';
+    }
+
+    /** A single-day leave is the common case, so the end date follows the start until it is changed. */
+    function syncLeaveToDate() {
+      const from = document.getElementById('leave-from-input');
+      const to = document.getElementById('leave-to-input');
+      if (from && to && (!to.value || to.value < from.value)) {
+        to.value = from.value;
+      }
+    }
+
+    async function submitLeaveRequest(event) {
+      if (event) event.preventDefault();
+      hideLeaveBanner('leave-feedback-banner');
+
+      const button = document.getElementById('leave-submit-btn');
+      const proofInput = document.getElementById('leave-proof-input');
+      const proof = proofInput && proofInput.files ? proofInput.files[0] : null;
+
+      if (!proof) {
+        showLeaveBanner('leave-feedback-banner',
+          '⚠️ <strong>Attach the proof.</strong> The event letter, invite or certificate is what replaces the paper.', 'error');
+        return;
+      }
+
+      const form = new FormData();
+      form.append('leaveType', document.getElementById('leave-type-select').value);
+      form.append('eventName', document.getElementById('leave-event-input').value.trim());
+      form.append('reason', document.getElementById('leave-reason-input').value.trim());
+      form.append('fromDate', document.getElementById('leave-from-input').value);
+      form.append('toDate', document.getElementById('leave-to-input').value);
+      form.append('proof', proof);
+
+      button.disabled = true;
+      button.textContent = '📤 Uploading proof…';
+
+      try {
+        // authHeaders(false) on purpose: the browser sets the multipart boundary itself.
+        const res = await fetch('/api/v1/leave/requests', {
+          method: 'POST',
+          headers: authHeaders(false),
+          body: form
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.success) {
+          showLeaveBanner('leave-feedback-banner',
+            '✅ <strong>Submitted.</strong> Your request is with the approving teacher — nothing to print or hand over.', 'ok');
+          document.getElementById('leave-submit-form').reset();
+          await loadMyLeaveRequests();
+        } else {
+          showLeaveBanner('leave-feedback-banner',
+            '⚠️ <strong>Not submitted:</strong> ' + escapeHtml(data.message || 'the request was rejected.'), 'error');
+        }
+      } catch (err) {
+        showLeaveBanner('leave-feedback-banner',
+          '⚠️ <strong>Could not reach the server.</strong> A leave request needs its proof uploaded, so it cannot be queued offline — try again once you are back online.', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = '📤 Submit for Approval';
+      }
+    }
+
+    /**
+     * Opens a stored proof. The endpoint is bearer-authenticated, so a plain link would be
+     * refused; the file is fetched with the session token and handed to the browser as a blob.
+     * Popup blockers get a download fallback rather than a dead button.
+     */
+    async function openLeaveProof(requestId, fileName) {
+      try {
+        const res = await fetch('/api/v1/leave/requests/' + encodeURIComponent(requestId) + '/proof', {
+          headers: authHeaders(false)
+        });
+        if (!res.ok) {
+          alert('Could not open the proof (' + res.status + ').');
+          return;
+        }
+
+        const blobUrl = URL.createObjectURL(await res.blob());
+        if (!window.open(blobUrl, '_blank', 'noopener')) {
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = fileName || 'proof';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        // Long enough for the new tab to have loaded it.
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (err) {
+        alert('Could not reach the server to open the proof.');
+      }
+    }
+
+    /**
+     * Renders the proof link. Attributes carry the ids and a delegated listener does the fetch,
+     * so nothing has to survive being quoted twice through a template literal and an attribute.
+     */
+    function proofLinkHtml(request, label) {
+      const name = request.proof.fileName;
+      return '<a href="#" class="leave-proof-link" data-request-id="' + escapeHtml(request.id) +
+        '" data-file-name="' + escapeHtml(name) + '">📎 ' +
+        escapeHtml(label ? label + ' (' + name + ')' : name) + '</a>';
+    }
+
+    // One delegated listener covers both the student list and the approval queue, including rows
+    // rendered after this ran.
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest && event.target.closest('.leave-proof-link');
+      if (!link) return;
+      event.preventDefault();
+      openLeaveProof(link.dataset.requestId, link.dataset.fileName);
+    });
+
+    async function loadMyLeaveRequests() {
+      const stack = document.getElementById('my-leave-stack');
+      if (!stack) return;
+      stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Loading your requests…</div></div>';
+
+      try {
+        const res = await fetch('/api/v1/leave/requests/mine', { headers: authHeaders(false) });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            escapeHtml(data.message || 'Could not load your requests.') + '</div></div>';
+          return;
+        }
+        if (!data.requests.length) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            'No leave requests yet. Submit one above and it goes straight to the approval queue.</div></div>';
+          return;
+        }
+
+        stack.innerHTML = data.requests.map(renderMyLeaveRow).join('');
+      } catch (err) {
+        stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Offline — reconnect to see your requests.</div></div>';
+      }
+    }
+
+    function renderMyLeaveRow(request) {
+      const detail = request.status === 'APPROVED'
+        ? request.sessionsAdjusted + ' lecture(s) credited as duty-present'
+        : (request.status === 'REJECTED'
+            ? 'Rejected: ' + (request.decisionNote || 'no reason given')
+            : 'Awaiting a decision');
+
+      return `
+        <div class="roll-call-row">
+          <div class="rc-date font-mono">${escapeHtml(request.fromDate)} → ${escapeHtml(request.toDate)}</div>
+          <div class="rc-subject">${escapeHtml(request.eventName)}</div>
+          <div class="rc-status">
+            <div class="status-dot ${LEAVE_STATUS_DOTS[request.status] || 'dot-warn'}"></div>
+            <span>${escapeHtml(request.status)}</span>
+          </div>
+          <div class="rc-detail">
+            ${escapeHtml(LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType)} • ${request.days} day(s) • ${escapeHtml(detail)}
+            ${request.proof ? ' • ' + proofLinkHtml(request) : ''}
+          </div>
+        </div>`;
+    }
+
+    // ----------------------------------------------------------- approval dashboard
+
+    async function loadLeaveApprovalQueue() {
+      const stack = document.getElementById('leave-approval-stack');
+      if (!stack) return;
+      const status = document.getElementById('leave-queue-status')?.value || 'PENDING';
+      stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Loading the queue…</div></div>';
+
+      try {
+        const res = await fetch('/api/v1/faculty/leave/requests?status=' + encodeURIComponent(status), {
+          headers: authHeaders(false)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            escapeHtml(data.message || 'Could not load the approval queue.') + '</div></div>';
+          return;
+        }
+        if (!data.requests.length) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Nothing in this queue.</div></div>';
+          return;
+        }
+
+        stack.innerHTML = data.requests.map(renderApprovalRow).join('');
+      } catch (err) {
+        stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Offline — reconnect to review requests.</div></div>';
+      }
+    }
+
+    function renderApprovalRow(request) {
+      const pending = request.status === 'PENDING';
+      const proofLink = request.proof
+        ? proofLinkHtml(request, 'View proof')
+        : '<span style="color: var(--state-risk);">No proof attached</span>';
+
+      const decision = pending
+        ? `<div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem;">
+             <button class="btn btn-primary" style="font-size: 12px; padding: 0.35rem 0.8rem;"
+                     onclick="decideLeaveRequest('${escapeHtml(request.id)}', 'approve')">✅ Approve</button>
+             <button class="btn btn-secondary" style="font-size: 12px; padding: 0.35rem 0.8rem;"
+                     onclick="decideLeaveRequest('${escapeHtml(request.id)}', 'reject')">✖ Reject</button>
+           </div>`
+        : `<div style="margin-top: 0.4rem; color: var(--text-tertiary); font-size: 12px;">
+             ${escapeHtml(request.status)} by ${escapeHtml(request.decidedBy || 'unknown')}
+             ${request.status === 'APPROVED' ? ' • ' + request.sessionsAdjusted + ' lecture(s) credited' : ''}
+             ${request.decisionNote ? ' • ' + escapeHtml(request.decisionNote) : ''}
+           </div>`;
+
+      return `
+        <div class="roll-call-row" style="flex-wrap: wrap;">
+          <div class="rc-date font-mono">${escapeHtml(request.rollNo)}</div>
+          <div class="rc-subject">${escapeHtml(request.studentName)} — ${escapeHtml(request.eventName)}</div>
+          <div class="rc-status">
+            <div class="status-dot ${LEAVE_STATUS_DOTS[request.status] || 'dot-warn'}"></div>
+            <span>${escapeHtml(LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType)}</span>
+          </div>
+          <div class="rc-detail" style="flex-basis: 100%;">
+            ${escapeHtml(request.fromDate)} → ${escapeHtml(request.toDate)} (${request.days} day(s))
+            • ${escapeHtml(request.division || '')} • ${proofLink}
+            ${request.reason ? '<br>' + escapeHtml(request.reason) : ''}
+            ${decision}
+          </div>
+        </div>`;
+    }
+
+    /**
+     * The 1-click decision. A rejection needs a reason, so it is asked for here rather than
+     * letting the request bounce off the server-side validation.
+     */
+    async function decideLeaveRequest(requestId, action) {
+      hideLeaveBanner('leave-approval-banner');
+
+      let decisionNote = '';
+      if (action === 'reject') {
+        decisionNote = (prompt('Why is this being rejected? The student sees this.') || '').trim();
+        if (decisionNote.length < 10) {
+          showLeaveBanner('leave-approval-banner',
+            '⚠️ <strong>Rejection needs a reason</strong> of at least 10 characters.', 'error');
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch('/api/v1/faculty/leave/requests/' + encodeURIComponent(requestId) + '/' + action, {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify({ decisionNote })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          showLeaveBanner('leave-approval-banner',
+            '⚠️ <strong>Not saved:</strong> ' + escapeHtml(data.message || 'the decision was refused.'), 'error');
+          return;
+        }
+
+        showLeaveBanner('leave-approval-banner', decisionSummary(data), 'ok');
+        await loadLeaveApprovalQueue();
+
+        // The defaulter notice is derived from the same records, so it goes stale the moment a
+        // decision lands. Refresh it so the teacher never reads a pre-approval list.
+        renderDefaultersTable();
+      } catch (err) {
+        showLeaveBanner('leave-approval-banner',
+          '⚠️ <strong>Could not reach the server.</strong> The decision was not recorded.', 'error');
+      }
+    }
+
+    /** Spells out what the click did to the student numbers. */
+    function decisionSummary(data) {
+      const impact = data.attendanceImpact;
+      if (!impact) {
+        return '✅ <strong>Done.</strong> ' + escapeHtml(data.message || '');
+      }
+
+      const cleared = impact.clearedFromDefaulterList
+        ? ' <strong>Now off the defaulter list.</strong>'
+        : '';
+
+      return '✅ <strong>Approved.</strong> ' + impact.sessionsAdjusted +
+        ' lecture(s) credited as duty-present. Attendance ' + impact.percentageBefore + '% → ' +
+        impact.percentageAfter + '% over ' + impact.totalConducted + ' conducted.' + cleared;
+    }
+
+    /**
+     * Live defaulter notice, read straight from /api/v1/reports/defaulters. It is derived from
+     * the attendance records rather than stored, so approving an OD and re-running this is all
+     * the recalculation the list needs.
+     */
+    async function renderDefaultersTable() {
       const tbody = document.getElementById('defaulter-table-body');
       const dateEl = document.getElementById('defaulter-notice-date');
       if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
       if (!tbody) return;
 
-      const defaulters = [
-        { rollNo: '2024CS09', name: 'Bhoomit Fatnani', total: 45, attended: 31, pct: 68.8, shortfall: 3, status: 'DEFAULTER' },
-        { rollNo: '2024CS20', name: 'Parth Khismatrao', total: 45, attended: 32, pct: 71.1, shortfall: 2, status: 'DEFAULTER' },
-        { rollNo: '2024CS30', name: 'Vinay Motwani', total: 45, attended: 33, pct: 73.3, shortfall: 1, status: 'DEFAULTER' }
-      ];
+      const division = document.getElementById('defaulter-division-select')?.value || '';
+      const threshold = document.getElementById('defaulter-threshold-select')?.value || '75';
+      const kpi = document.getElementById('defaulter-kpi-count');
 
-      tbody.innerHTML = '';
-      defaulters.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="font-mono" style="font-weight: 700;">${d.rollNo}</td>
-          <td>${d.name}</td>
-          <td class="font-mono">${d.total}</td>
-          <td class="font-mono">${d.attended}</td>
-          <td class="font-mono" style="color: var(--state-risk); font-weight: 700;">${d.pct}%</td>
-          <td class="font-mono">${d.shortfall} Lectures</td>
-          <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">CRITICAL</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
+      tbody.innerHTML = '<tr><td colspan="8">Loading the notice…</td></tr>';
+
+      try {
+        const query = new URLSearchParams({ division, threshold });
+        const res = await fetch('/api/v1/reports/defaulters?' + query.toString(), { headers: authHeaders(false) });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          tbody.innerHTML = '<tr><td colspan="8">' +
+            escapeHtml(data.message || 'Could not generate the defaulter notice.') + '</td></tr>';
+          return;
+        }
+
+        if (kpi) kpi.textContent = data.defaulterCount;
+
+        if (!data.defaulters.length) {
+          tbody.innerHTML = '<tr><td colspan="8">No student in ' + escapeHtml(division || 'any division') +
+            ' is below ' + escapeHtml(threshold) + '%.</td></tr>';
+          return;
+        }
+
+        const limit = Number(threshold) / 100;
+        tbody.innerHTML = data.defaulters.map(row => defaulterRowHtml(row, limit)).join('');
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="8">Offline — reconnect to generate the notice.</td></tr>';
+      }
+    }
+
+    function defaulterRowHtml(row, limit) {
+      // Consecutive lectures still to attend to reach the threshold: ceil((limit*T - A) / (1 - limit)).
+      const shortfall = limit >= 1
+        ? 0
+        : Math.max(0, Math.ceil((limit * row.totalConducted - row.totalAttended) / (1 - limit)));
+      const critical = Number(row.overallPercentage) < 60;
+
+      return `
+        <tr>
+          <td class="font-mono" style="font-weight: 700;">${escapeHtml(row.rollNo)}</td>
+          <td>${escapeHtml(row.name)}</td>
+          <td class="font-mono">${row.totalConducted}</td>
+          <td class="font-mono">${row.totalAttended}</td>
+          <td class="font-mono">${row.totalDutyPresent}</td>
+          <td class="font-mono" style="color: var(--state-risk); font-weight: 700;">${row.overallPercentage}%</td>
+          <td class="font-mono">${shortfall} Lectures</td>
+          <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">${critical ? 'CRITICAL' : 'DEFAULTER'}</span></td>
+        </tr>`;
     }
 
     // --- Admin Roster Import Functions ---

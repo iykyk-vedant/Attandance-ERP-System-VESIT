@@ -198,8 +198,8 @@ public class DefaulterReportIntegrationTest {
 
         String[] lines = new String(body, StandardCharsets.UTF_8).split("\r\n");
 
-        assertEquals("Roll No,Name,Total Conducted,Total Attended,Overall %,RPT101 %", lines[0]);
-        assertEquals("RPT_CSV_A,\"Comma, Student\",10,1,10.00,10.00", lines[1],
+        assertEquals("Roll No,Name,Total Conducted,Total Attended,Duty (OD),Overall %,RPT101 %", lines[0]);
+        assertEquals("RPT_CSV_A,\"Comma, Student\",10,1,0,10.00,10.00", lines[1],
                 "a name containing a comma must stay inside one quoted field");
     }
 
@@ -227,14 +227,16 @@ public class DefaulterReportIntegrationTest {
 
             Row header = sheet.getRow(0);
             assertEquals("Roll No", header.getCell(0).getStringCellValue());
-            assertEquals("Overall %", header.getCell(4).getStringCellValue());
-            assertEquals("RPT101 %", header.getCell(5).getStringCellValue());
+            assertEquals("Duty (OD)", header.getCell(4).getStringCellValue());
+            assertEquals("Overall %", header.getCell(5).getStringCellValue());
+            assertEquals("RPT101 %", header.getCell(6).getStringCellValue());
 
             Row first = sheet.getRow(1);
             assertEquals("RPT_XLSX_A", first.getCell(0).getStringCellValue());
             assertEquals(10, (int) first.getCell(2).getNumericCellValue());
             assertEquals(6, (int) first.getCell(3).getNumericCellValue());
-            assertEquals(60.0, first.getCell(4).getNumericCellValue(), 0.001);
+            assertEquals(0, (int) first.getCell(4).getNumericCellValue(), "no OD credited in this window");
+            assertEquals(60.0, first.getCell(5).getNumericCellValue(), 0.001);
 
             assertNull(sheet.getRow(2), "only defaulters belong in the export");
         }
@@ -273,7 +275,7 @@ public class DefaulterReportIntegrationTest {
         assertTrue(report.getSubjects().isEmpty());
 
         String csv = new String(defaulterExportService.toCsv(report), StandardCharsets.UTF_8);
-        assertEquals("Roll No,Name,Total Conducted,Total Attended,Overall %\r\n", csv);
+        assertEquals("Roll No,Name,Total Conducted,Total Attended,Duty (OD),Overall %\r\n", csv);
     }
 
     // --- fixtures -------------------------------------------------------------------------

@@ -22,9 +22,12 @@ public class DefaulterAggregateRow {
     private String subjectCode;
     private String subjectName;
 
-    /** Lectures the student was actually accountable for (PRESENT + ABSENT; NA excluded). */
+    /** Lectures the student was accountable for (PRESENT + ABSENT + DUTY_PRESENT; NA excluded). */
     private Long conducted;
 
-    /** Lectures marked PRESENT. */
+    /** Lectures credited to the student: PRESENT plus approved-duty DUTY_PRESENT. */
     private Long attended;
+
+    /** The DUTY_PRESENT share of {@link #attended} — lectures excused by an approved OD / medical leave. */
+    private Long dutyPresent;
 }

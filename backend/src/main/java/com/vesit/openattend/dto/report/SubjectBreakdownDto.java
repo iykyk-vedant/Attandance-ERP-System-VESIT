@@ -17,5 +17,9 @@ public class SubjectBreakdownDto {
     private String subjectName;
     private int conducted;
     private int attended;
+
+    /** The approved OD / medical-leave share of {@link #attended}. */
+    private int dutyPresent;
+
     private BigDecimal percentage;
 }

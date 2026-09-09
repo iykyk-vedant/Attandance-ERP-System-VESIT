@@ -8,6 +8,7 @@ import com.vesit.openattend.exception.CorrectionWindowExpiredException;
 import com.vesit.openattend.exception.MarkingNotAuthorizedException;
 import com.vesit.openattend.repository.*;
 import com.vesit.openattend.service.attendance.ProxyDelegationService;
+import com.vesit.openattend.service.leave.DutyAttendanceAdjuster;
 import com.vesit.openattend.service.sync.SyncDiffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ public class FacultyAttendanceService {
     private final AttendanceHistoryEventRepository attendanceHistoryEventRepository;
     private final FacultySubjectAllocationRepository allocationRepository;
     private final ProxyDelegationService proxyDelegationService;
+    private final DutyAttendanceAdjuster dutyAttendanceAdjuster;
 
     @Transactional(readOnly = true)
     public List<FacultySubjectDto> getMySubjects(String facultyEmail) {
@@ -188,13 +190,21 @@ public class FacultyAttendanceService {
         List<Student> roster = getRosterStudents(division, batch);
         Set<String> absentSet = new HashSet<>(request.getAbsentStudentIds() != null ? request.getAbsentStudentIds() : Collections.emptyList());
 
+        // Students whose OD / medical leave was approved before this lecture was marked. They are
+        // recorded DUTY_PRESENT instead of ABSENT, so an OD cleared ahead of a hackathon applies to
+        // the lectures marked while the student is away without anyone revisiting the session.
+        Set<String> onApprovedLeave = dutyAttendanceAdjuster.studentsOnApprovedLeave(
+                roster.stream().map(Student::getId).toList(), date);
+
         int total = roster.size();
         int absentCount = 0;
         for (Student s : roster) {
-            if (absentSet.contains(s.getId())) {
+            if (absentSet.contains(s.getId()) && !onApprovedLeave.contains(s.getId())) {
                 absentCount++;
             }
         }
+        // Duty-present students sit on the present side of the session summary, matching the
+        // records written below and keeping present + absent equal to the roster size.
         int presentCount = total - absentCount;
 
         String payloadHash = SyncDiffer.computeRowHash(List.of(
@@ -233,7 +243,7 @@ public class FacultyAttendanceService {
 
         // Upsert AttendanceRecord for every student in the cohort
         for (Student student : roster) {
-            AttendanceStatus status = absentSet.contains(student.getId()) ? AttendanceStatus.ABSENT : AttendanceStatus.PRESENT;
+            AttendanceStatus status = resolveMarkedStatus(student.getId(), absentSet, onApprovedLeave);
 
             Optional<AttendanceRecord> existingRec = attendanceRecordRepository
                     .findByStudentIdAndSubjectIdAndLectureDateAndSessionIndex(
@@ -273,7 +283,29 @@ public class FacultyAttendanceService {
             attendanceHistoryEventRepository.save(event);
         }
 
-        return mapToResponse(session, new ArrayList<>(absentSet));
+        // Only the genuinely absent are reported back: a duty-present student was marked absent by
+        // the teacher but is not absent for attendance purposes, and the correction modal prefills
+        // itself from this list.
+        List<String> reportedAbsentees = absentSet.stream()
+                .filter(id -> !onApprovedLeave.contains(id))
+                .toList();
+
+        return mapToResponse(session, reportedAbsentees);
+    }
+
+    /**
+     * The status a roll call produces for one student.
+     *
+     * <p>Absent plus an approved OD / medical leave becomes {@code DUTY_PRESENT}, which counts
+     * towards the percentage without pretending the student was in the room. A student the teacher
+     * marked present keeps {@code PRESENT} even while on leave — they turned up, and the honest
+     * status is worth more than a uniform one.
+     */
+    private AttendanceStatus resolveMarkedStatus(String studentId, Set<String> absentIds, Set<String> onApprovedLeave) {
+        if (!absentIds.contains(studentId)) {
+            return AttendanceStatus.PRESENT;
+        }
+        return onApprovedLeave.contains(studentId) ? AttendanceStatus.DUTY_PRESENT : AttendanceStatus.ABSENT;
     }
 
     /**
@@ -368,10 +400,15 @@ public class FacultyAttendanceService {
         Set<String> newAbsentSet = new HashSet<>(request.getUpdatedAbsentStudentIds() != null ? request.getUpdatedAbsentStudentIds() : Collections.emptyList());
         List<AttendanceRecord> records = attendanceRecordRepository.findByLectureSessionId(session.getId());
 
+        // A correction re-applies approved leave too: a certificate cleared after the lecture was
+        // marked must not be undone by a teacher later fixing an unrelated name on the same roll call.
+        Set<String> onApprovedLeave = dutyAttendanceAdjuster.studentsOnApprovedLeave(
+                records.stream().map(rec -> rec.getStudent().getId()).toList(), session.getSessionDate());
+
         int absentCount = 0;
         for (AttendanceRecord rec : records) {
             AttendanceStatus oldStatus = rec.getStatus();
-            AttendanceStatus newStatus = newAbsentSet.contains(rec.getStudent().getId()) ? AttendanceStatus.ABSENT : AttendanceStatus.PRESENT;
+            AttendanceStatus newStatus = resolveMarkedStatus(rec.getStudent().getId(), newAbsentSet, onApprovedLeave);
 
             if (newStatus == AttendanceStatus.ABSENT) {
                 absentCount++;

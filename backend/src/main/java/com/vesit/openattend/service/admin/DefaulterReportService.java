@@ -2,6 +2,7 @@ package com.vesit.openattend.service.admin;
 
 import com.vesit.openattend.dto.report.*;
 import com.vesit.openattend.repository.AttendanceRecordRepository;
+import com.vesit.openattend.service.attendance.AttendancePercentage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,10 @@ import java.util.*;
 /**
  * Builds the &lt; 75% defaulter list for a division over a date window.
  *
- * <p>All percentages are computed with {@link BigDecimal} at {@link #PERCENTAGE_SCALE} decimal
- * places and compared at that same scale, so the number a class teacher reads on the sheet is
- * exactly the number that decided defaulter status — 74.9% is flagged, 75.0% is not.
+ * <p>Counting and rounding both come from {@link AttendancePercentage}, so an approved OD or
+ * medical leave lifts a student off this list by exactly the arithmetic the student dashboard
+ * shows them — and re-running the report after an approval is all the "recalculation" the
+ * defaulter list needs, because it is derived, never stored.
  */
 @Slf4j
 @Service
@@ -26,9 +28,9 @@ import java.util.*;
 public class DefaulterReportService {
 
     /** Percentages are rounded — and compared — at two decimal places. */
-    public static final int PERCENTAGE_SCALE = 2;
+    public static final int PERCENTAGE_SCALE = AttendancePercentage.SCALE;
 
-    public static final BigDecimal DEFAULT_THRESHOLD = new BigDecimal("75.00");
+    public static final BigDecimal DEFAULT_THRESHOLD = AttendancePercentage.DEFAULT_THRESHOLD;
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -53,6 +55,7 @@ public class DefaulterReportService {
         for (DefaulterAggregateRow row : rows) {
             int conducted = toInt(row.getConducted());
             int attended = toInt(row.getAttended());
+            int duty = toInt(row.getDutyPresent());
 
             subjectColumns.putIfAbsent(row.getSubjectCode(),
                     SubjectColumnDto.builder().code(row.getSubjectCode()).name(row.getSubjectName()).build());
@@ -67,21 +70,23 @@ public class DefaulterReportService {
 
             student.setTotalConducted(student.getTotalConducted() + conducted);
             student.setTotalAttended(student.getTotalAttended() + attended);
+            student.setTotalDutyPresent(student.getTotalDutyPresent() + duty);
             student.getSubjects().put(row.getSubjectCode(), SubjectBreakdownDto.builder()
                     .subjectCode(row.getSubjectCode())
                     .subjectName(row.getSubjectName())
                     .conducted(conducted)
                     .attended(attended)
-                    .percentage(percentage(attended, conducted))
+                    .dutyPresent(duty)
+                    .percentage(AttendancePercentage.of(attended, conducted))
                     .build());
         }
 
         List<DefaulterRowDto> defaulters = new ArrayList<>();
         for (DefaulterRowDto student : byStudent.values()) {
-            BigDecimal overall = percentage(student.getTotalAttended(), student.getTotalConducted());
+            BigDecimal overall = AttendancePercentage.of(student.getTotalAttended(), student.getTotalConducted());
             student.setOverallPercentage(overall);
 
-            if (overall.compareTo(effectiveThreshold) < 0) {
+            if (AttendancePercentage.isDefaulter(overall, effectiveThreshold)) {
                 defaulters.add(student);
             }
         }
@@ -106,20 +111,6 @@ public class DefaulterReportService {
                 .subjects(new ArrayList<>(subjectColumns.values()))
                 .defaulters(defaulters)
                 .build();
-    }
-
-    /**
-     * Attendance percentage rounded HALF_UP. A student with no accountable lectures in the window
-     * scores 0 conducted; they are reported as 0% but are filtered out upstream by the query's
-     * HAVING clause, so they never appear as defaulters on an empty denominator.
-     */
-    private BigDecimal percentage(int attended, int conducted) {
-        if (conducted <= 0) {
-            return BigDecimal.ZERO.setScale(PERCENTAGE_SCALE, RoundingMode.HALF_UP);
-        }
-        return BigDecimal.valueOf(attended)
-                .multiply(HUNDRED)
-                .divide(BigDecimal.valueOf(conducted), PERCENTAGE_SCALE, RoundingMode.HALF_UP);
     }
 
     private BigDecimal normaliseThreshold(BigDecimal threshold) {
