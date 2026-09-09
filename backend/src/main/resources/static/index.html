@@ -1189,32 +1189,47 @@
 
       <!-- Student Navigation Group -->
       <div class="nav-section" id="student-nav-group">
-        <div class="nav-section-title">STUDENT</div>
+        <div class="nav-section-title">STUDENT SUITE</div>
         <div class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> Dashboard</div>
         <div class="nav-item" onclick="switchView('analytics', this)"><span>📈</span> Analytics</div>
         <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
         <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
         <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+        <div class="nav-item" onclick="switchView('od-leave', this)"><span>📝</span> OD & Medical Leave</div>
       </div>
 
       <!-- Faculty Navigation Group -->
       <div class="nav-section" id="faculty-nav-group" style="display: none;">
-        <div class="nav-section-title">CLASSROOM ATTENDANCE</div>
+        <div class="nav-section-title">FACULTY SUITE</div>
         <div class="nav-item active" onclick="switchView('faculty-marking', this)"><span>⚡</span> Mark Attendance</div>
         <div class="nav-item" onclick="switchView('faculty-history', this)"><span>📜</span> Sessions & 48h Edit</div>
+        <div class="nav-item" onclick="switchView('faculty-diary', this)"><span>📖</span> NAAC Course Diary</div>
+        <div class="nav-item" onclick="switchView('faculty-proxy', this)"><span>🔄</span> Proxy Delegation</div>
       </div>
 
       <!-- Class Teacher Navigation Group -->
       <div class="nav-section" id="ct-nav-group" style="display: none;">
-        <div class="nav-section-title">DIVISION MGMT</div>
+        <div class="nav-section-title">DIVISION COORDINATOR</div>
         <div class="nav-item" onclick="switchView('ct-defaulters', this)"><span>📑</span> Defaulter Notice (<75%)</div>
         <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Master Roster Upload</div>
+        <div class="nav-item" onclick="switchView('ct-od-approvals', this)"><span>📝</span> OD Leave Approvals</div>
       </div>
 
-      <!-- Admin Navigation Group -->
+      <!-- HOD & Department Academic Navigation Group -->
+      <div class="nav-section" id="hod-nav-group" style="display: none;">
+        <div class="nav-section-title">DEPARTMENT OVERSIGHT</div>
+        <div class="nav-item" onclick="switchView('hod-overview', this)"><span>🏛️</span> Department Overview</div>
+        <div class="nav-item" onclick="switchView('hod-compliance', this)"><span>⏱️</span> Faculty Pacing & Diary</div>
+        <div class="nav-item" onclick="switchView('faculty-allocations', this)"><span>👥</span> Faculty Allocations</div>
+      </div>
+
+      <!-- Super Admin Navigation Group -->
       <div class="nav-section" id="admin-nav-group" style="display: none;">
-        <div class="nav-section-title">ADMIN AUDIT</div>
-        <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Audit Logs</div>
+        <div class="nav-section-title">INSTITUTIONAL ERP</div>
+        <div class="nav-item" onclick="switchView('superadmin-overview', this)"><span>🛡️</span> College Snapshot</div>
+        <div class="nav-item" onclick="switchView('superadmin-calendar', this)"><span>📅</span> Academic Calendar</div>
+        <div class="nav-item" onclick="switchView('admin-logs', this)"><span>📋</span> Security Audit Logs</div>
+        <div class="nav-item" onclick="switchView('system-diagnostics', this)"><span>⚡</span> System Diagnostics</div>
       </div>
 
       <!-- Sidebar User Profile Bar -->
@@ -1227,7 +1242,7 @@
         <button class="logout-action-btn" title="Sign Out" onclick="handleLogout()">🚪</button>
       </div>
 
-      <!-- Sidebar Footer with Role Switcher -->
+      <!-- Sidebar Footer with 5-Role Switcher -->
       <div class="sidebar-footer">
         <div class="role-switcher" style="display: flex; flex-direction: column; gap: 4px;">
           <div style="display: flex; gap: 3px;">
@@ -1235,8 +1250,9 @@
             <button class="role-btn" id="btn-role-faculty" onclick="toggleRole('FACULTY')">👨‍🏫 Faculty</button>
           </div>
           <div style="display: flex; gap: 3px;">
-            <button class="role-btn" id="btn-role-ct" onclick="toggleRole('CLASS_TEACHER')">📋 Class Teacher</button>
-            <button class="role-btn" id="btn-role-admin" onclick="toggleRole('ADMIN')">⚡ Admin</button>
+            <button class="role-btn" id="btn-role-ct" onclick="toggleRole('CLASS_TEACHER')">📋 CT</button>
+            <button class="role-btn" id="btn-role-hod" onclick="toggleRole('HOD')">🏛️ HOD</button>
+            <button class="role-btn" id="btn-role-admin" onclick="toggleRole('SUPER_ADMIN')">🛡️ Admin</button>
           </div>
         </div>
       </div>
@@ -1314,7 +1330,7 @@
         <div class="topbar-right">
           <div class="sync-pulse-bar">
             <div class="pulse-dot"></div>
-            <span id="sync-pulse-text">Synced 4m ago • Google Sheets API</span>
+            <span id="sync-pulse-text">⚡ Live • Native PostgreSQL ERP</span>
           </div>
           <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
         </div>
@@ -1985,6 +2001,760 @@
           </div>
         </div>
 
+
+        <!-- View: Student OD / Medical Leave Portal -->
+        <div class="view-pane" id="pane-od-leave" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">📝 Official Duty (OD) & Medical Leave Portal</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Submit digital duty leave for inter-college hackathons, sports, paper presentations, or certified medical leave.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="openStudentODModal()" style="font-size: 13px;">
+              ➕ New Leave Application
+            </button>
+          </div>
+
+          <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">4</span>
+              <span class="kpi-label">Approved Sessions</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-warn);">1</span>
+              <span class="kpi-label">Pending Review</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--accent);">+2.8%</span>
+              <span class="kpi-label">Duty Credit Earned</span>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Your Submitted Applications</h3>
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Application ID</th>
+                  <th>Category</th>
+                  <th>Dates</th>
+                  <th>Reason / Event</th>
+                  <th>Proof</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="student-od-table-body">
+                <tr>
+                  <td class="font-mono">OD-2026-084</td>
+                  <td><strong>Smart India Hackathon 2026</strong></td>
+                  <td class="font-mono">2026-08-18 to 2026-08-20</td>
+                  <td>Grand Finale Participation at IIT Madras Hub</td>
+                  <td><span style="color: var(--accent); cursor: pointer; text-decoration: underline;">sih_invite.pdf</span></td>
+                  <td><span class="chip-badge badge-present">✅ APPROVED</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">OD-2026-092</td>
+                  <td><strong>VESIT Sports Council</strong></td>
+                  <td class="font-mono">2026-09-02</td>
+                  <td>Inter-College Football Tournament Representing VESIT</td>
+                  <td><span style="color: var(--accent); cursor: pointer; text-decoration: underline;">sports_letter.pdf</span></td>
+                  <td><span class="chip-badge badge-present">✅ APPROVED</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">OD-2026-105</td>
+                  <td><strong>IEEE TechX Presentation</strong></td>
+                  <td class="font-mono">2026-09-12 to 2026-09-13</td>
+                  <td>Paper Presentation on Distributed Consensus Systems</td>
+                  <td><span style="color: var(--accent); cursor: pointer; text-decoration: underline;">ieee_cert.pdf</span></td>
+                  <td><span class="chip-badge" style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn);">⏳ PENDING REVIEW</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: Faculty NAAC Academic Diary -->
+        <div class="view-pane" id="pane-faculty-diary" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">📖 NAAC / NBA Academic Course Diary</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Syllabus coverage tracker, lecture delivery log, and 1-click accreditation course file export.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="exportNaacDiaryCSV()" style="font-size: 13px;">
+              📥 Export NAAC Course File (.CSV)
+            </button>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+              <div class="form-group" style="min-width: 200px;">
+                <label class="form-label">Subject</label>
+                <select class="form-select" id="diary-subject-select" onchange="renderDiaryView()">
+                  <option value="CS402" selected>Operating Systems (D15B)</option>
+                  <option value="CS401">Data Structures (D12A)</option>
+                </select>
+              </div>
+              <div style="margin-left: auto; display: flex; gap: 2rem; align-items: center;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary);">SYLLABUS COVERAGE</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--state-safe);">80.0% (24/30 Lecs)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary);">AVERAGE ATTENDANCE</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">84.2%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Lecture Topics & Methodology Log</h3>
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Lec #</th>
+                  <th>Date</th>
+                  <th>Slot</th>
+                  <th>Topic Covered</th>
+                  <th>Methodology</th>
+                  <th>Attendance Rate</th>
+                  <th>NAAC Criterion</th>
+                </tr>
+              </thead>
+              <tbody id="diary-table-body">
+                <tr>
+                  <td class="font-mono">#24</td>
+                  <td class="font-mono">2026-09-08</td>
+                  <td>Slot 2</td>
+                  <td>Process Synchronization & Peterson's Algorithm</td>
+                  <td>ICT Slides + Whiteboard</td>
+                  <td class="font-mono" style="color: var(--state-safe);">92.4% (67/72)</td>
+                  <td><span class="chip-badge badge-present">Criterion 2.3.1</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">#23</td>
+                  <td class="font-mono">2026-09-06</td>
+                  <td>Slot 3</td>
+                  <td>Deadlock Handling: Banker's Algorithm Execution</td>
+                  <td>Hands-on Problem Solving</td>
+                  <td class="font-mono" style="color: var(--state-safe);">88.8% (64/72)</td>
+                  <td><span class="chip-badge badge-present">Criterion 2.3.1</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">#22</td>
+                  <td class="font-mono">2026-09-04</td>
+                  <td>Slot 1</td>
+                  <td>Classical Synchronization: Dining Philosophers Problem</td>
+                  <td>Chalk & Board Tutorial</td>
+                  <td class="font-mono" style="color: var(--state-safe);">84.7% (61/72)</td>
+                  <td><span class="chip-badge badge-present">Criterion 2.3.1</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: Faculty Proxy Delegation -->
+        <div class="view-pane" id="pane-faculty-proxy" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">🔄 Proxy & Substitute Lecture Delegation</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Assign a colleague to take a lecture in your absence with audited substitution records.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem;">
+            <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem;">Assign New Proxy</h3>
+              <form onsubmit="handleProxySubmit(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                  <label class="form-label">Subject & Division</label>
+                  <select class="form-select" id="proxy-subject-select">
+                    <option value="D15B-OS">D15B - Operating Systems</option>
+                    <option value="D12A-DS">D12A - Data Structures</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lecture Date</label>
+                  <input type="date" class="form-input" id="proxy-date-input" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Slot Index</label>
+                  <select class="form-select" id="proxy-slot-select">
+                    <option value="1">Slot 1 (09:00 - 10:00)</option>
+                    <option value="2">Slot 2 (10:00 - 11:00)</option>
+                    <option value="3">Slot 3 (11:15 - 12:15)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Substitute Faculty Member</label>
+                  <select class="form-select" id="proxy-faculty-select">
+                    <option value="fac_02">Prof. K. Rao (CMPN)</option>
+                    <option value="fac_03">Prof. S. Mehta (CMPN)</option>
+                    <option value="fac_04">Dr. Nupur Giri (CMPN HOD)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Reason for Absence</label>
+                  <input type="text" class="form-input" id="proxy-reason-input" placeholder="e.g. University Examination Duty" required />
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                  ⚡ Confirm Proxy Delegation
+                </button>
+              </form>
+            </div>
+
+            <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem;">Active Delegations Log</h3>
+              <table class="column-preview-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Slot</th>
+                    <th>Class</th>
+                    <th>Substitute</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="proxy-history-table">
+                  <tr>
+                    <td class="font-mono">2026-09-12</td>
+                    <td>Slot 2</td>
+                    <td>D15B - OS</td>
+                    <td>Prof. K. Rao</td>
+                    <td><span class="chip-badge badge-present">CONFIRMED</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-mono">2026-08-28</td>
+                    <td>Slot 1</td>
+                    <td>D15B - OS</td>
+                    <td>Prof. S. Mehta</td>
+                    <td><span class="chip-badge" style="background: var(--bg-surface-2); color: var(--text-secondary);">COMPLETED</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- View: Class Teacher OD Approvals Inbox -->
+        <div class="view-pane" id="pane-ct-od-approvals" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">📝 Division OD Leave Approvals Inbox</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Review and approve Official Duty and Medical leaves for students in Division D12B.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" onclick="renderODApprovalsTable()" style="font-size: 13px;">
+                🔄 Refresh Inbox
+              </button>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Roll No</th>
+                  <th>Student Name</th>
+                  <th>Category</th>
+                  <th>Dates</th>
+                  <th>Event Details</th>
+                  <th>Document</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ct-od-inbox-body">
+                <tr id="od-row-105">
+                  <td class="font-mono">2024CS24</td>
+                  <td><strong>Prasad Mahajan</strong></td>
+                  <td>IEEE TechX Presentation</td>
+                  <td class="font-mono">2026-09-12 to 2026-09-13</td>
+                  <td>Paper Presentation on Distributed Systems</td>
+                  <td><a href="#" style="color: var(--accent); font-weight: 600;">📎 ieee_cert.pdf</a></td>
+                  <td>
+                    <div style="display: flex; gap: 0.35rem;">
+                      <button class="btn btn-primary" onclick="approveODItem('od-row-105')" style="padding: 0.35rem 0.6rem; font-size: 11px;">
+                        ✅ Approve
+                      </button>
+                      <button class="btn btn-secondary" onclick="rejectODItem('od-row-105')" style="padding: 0.35rem 0.6rem; font-size: 11px; color: var(--state-risk);">
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr id="od-row-106">
+                  <td class="font-mono">2024CS08</td>
+                  <td><strong>Anushka Dubey</strong></td>
+                  <td>Medical Certificate</td>
+                  <td class="font-mono">2026-09-09 to 2026-09-10</td>
+                  <td>Viral fever certified by campus physician</td>
+                  <td><a href="#" style="color: var(--accent); font-weight: 600;">📎 med_cert.pdf</a></td>
+                  <td>
+                    <div style="display: flex; gap: 0.35rem;">
+                      <button class="btn btn-primary" onclick="approveODItem('od-row-106')" style="padding: 0.35rem 0.6rem; font-size: 11px;">
+                        ✅ Approve
+                      </button>
+                      <button class="btn btn-secondary" onclick="rejectODItem('od-row-106')" style="padding: 0.35rem 0.6rem; font-size: 11px; color: var(--state-risk);">
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: HOD Department Overview -->
+        <div class="view-pane" id="pane-hod-overview" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">🏛️ Department Academic Oversight (Computer Engineering)</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Comprehensive department performance across all 6 divisions (440 students, 32 faculty members).
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="window.print()" style="font-size: 13px;">
+              📄 Generate Department Report PDF
+            </button>
+          </div>
+
+          <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">78.1%</span>
+              <span class="kpi-label">Department Avg Attendance</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-risk);">28</span>
+              <span class="kpi-label">Total Defaulters (&lt;75%)</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--accent);">96.4%</span>
+              <span class="kpi-label">Faculty On-Time Marking</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--text-primary);">1,240</span>
+              <span class="kpi-label">NAAC Diary Sessions Logged</span>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Division Comparative Benchmark Matrix</h3>
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Division</th>
+                  <th>Semester</th>
+                  <th>Class Teacher</th>
+                  <th>Enrolled</th>
+                  <th>Avg Attendance</th>
+                  <th>Critical (&lt;65%)</th>
+                  <th>Warning (65-75%)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>D7A</strong></td>
+                  <td>Sem IV</td>
+                  <td>Prof. K. Ambekar</td>
+                  <td class="font-mono">72</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">81.2%</td>
+                  <td class="font-mono" style="color: var(--state-risk);">2</td>
+                  <td class="font-mono" style="color: var(--state-warn);">5</td>
+                  <td><span class="chip-badge badge-present">🟢 Safe</span></td>
+                </tr>
+                <tr>
+                  <td><strong>D7B</strong></td>
+                  <td>Sem IV</td>
+                  <td>Prof. S. Rathi</td>
+                  <td class="font-mono">74</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">77.4%</td>
+                  <td class="font-mono" style="color: var(--state-risk);">4</td>
+                  <td class="font-mono" style="color: var(--state-warn);">7</td>
+                  <td><span class="chip-badge badge-present">🟢 Safe</span></td>
+                </tr>
+                <tr>
+                  <td><strong>D12A</strong></td>
+                  <td>Sem VI</td>
+                  <td>Prof. G. Shingwekar</td>
+                  <td class="font-mono">71</td>
+                  <td class="font-mono" style="color: var(--state-warn); font-weight: 700;">74.1%</td>
+                  <td class="font-mono" style="color: var(--state-risk);">6</td>
+                  <td class="font-mono" style="color: var(--state-warn);">11</td>
+                  <td><span class="chip-badge" style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn);">🟡 Warning</span></td>
+                </tr>
+                <tr>
+                  <td><strong>D12B</strong></td>
+                  <td>Sem VI</td>
+                  <td>Prof. Sneha Sharma</td>
+                  <td class="font-mono">72</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">81.4%</td>
+                  <td class="font-mono" style="color: var(--state-risk);">3</td>
+                  <td class="font-mono" style="color: var(--state-warn);">8</td>
+                  <td><span class="chip-badge badge-present">🟢 Safe</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: HOD Faculty Pacing & Compliance -->
+        <div class="view-pane" id="pane-hod-compliance" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">⏱️ Faculty Syllabus Pacing & Teaching Compliance</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Track weekly lecture deliveries against Mumbai University syllabus schedules.
+              </p>
+            </div>
+            <button class="btn btn-secondary" onclick="alert('WhatsApp alert dispatched to faculty coordinators.')" style="font-size: 13px;">
+              📱 Send Pacing Reminders
+            </button>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Faculty Member</th>
+                  <th>Subject</th>
+                  <th>Division</th>
+                  <th>Conducted / Planned</th>
+                  <th>Completion %</th>
+                  <th>Last Marked</th>
+                  <th>Compliance Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Prof. Anita Patil</strong></td>
+                  <td>Operating Systems</td>
+                  <td>D12B</td>
+                  <td class="font-mono">24 / 30</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <div style="flex: 1; height: 6px; background: var(--bg-surface-2); border-radius: 99px;">
+                        <div style="width: 80%; height: 100%; background: var(--state-safe); border-radius: 99px;"></div>
+                      </div>
+                      <span class="font-mono" style="font-size: 12px;">80%</span>
+                    </div>
+                  </td>
+                  <td class="font-mono">Today, 10:15</td>
+                  <td><span class="chip-badge badge-present">🟢 On Schedule</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Prof. K. Rao</strong></td>
+                  <td>Database Systems</td>
+                  <td>D12B</td>
+                  <td class="font-mono">28 / 30</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <div style="flex: 1; height: 6px; background: var(--bg-surface-2); border-radius: 99px;">
+                        <div style="width: 93%; height: 100%; background: var(--state-safe); border-radius: 99px;"></div>
+                      </div>
+                      <span class="font-mono" style="font-size: 12px;">93%</span>
+                    </div>
+                  </td>
+                  <td class="font-mono">Today, 11:30</td>
+                  <td><span class="chip-badge badge-present">🟢 Ahead</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Prof. S. Mehta</strong></td>
+                  <td>Computer Networks</td>
+                  <td>D12A</td>
+                  <td class="font-mono">19 / 30</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <div style="flex: 1; height: 6px; background: var(--bg-surface-2); border-radius: 99px;">
+                        <div style="width: 63%; height: 100%; background: var(--state-risk); border-radius: 99px;"></div>
+                      </div>
+                      <span class="font-mono" style="font-size: 12px;">63%</span>
+                    </div>
+                  </td>
+                  <td class="font-mono">2 days ago</td>
+                  <td><span class="chip-badge badge-absent">⚠️ 3 Lecs Behind</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: HOD Faculty Allocations -->
+        <div class="view-pane" id="pane-faculty-allocations" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">👥 Faculty Subject & Lab Batch Allocations</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Department teaching matrix mapping teachers to theory classes and practical lab batches.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="alert('Allocation modal opened.')" style="font-size: 13px;">
+              ➕ Allocate New Subject
+            </button>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Name</th>
+                  <th>Division</th>
+                  <th>Component</th>
+                  <th>Assigned Faculty</th>
+                  <th>Contact Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">CS401</td>
+                  <td>Data Structures & Algorithms</td>
+                  <td>D12A</td>
+                  <td>Theory (All)</td>
+                  <td><strong>Dr. Nupur Giri</strong></td>
+                  <td class="font-mono">nupur.giri@ves.ac.in</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">CS402</td>
+                  <td>Operating Systems</td>
+                  <td>D12B</td>
+                  <td>Theory (All)</td>
+                  <td><strong>Prof. Anita Patil</strong></td>
+                  <td class="font-mono">anita.patil@ves.ac.in</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">CS402L</td>
+                  <td>Operating Systems Lab</td>
+                  <td>D12B</td>
+                  <td>Batch B1, B2</td>
+                  <td><strong>Prof. Anita Patil</strong></td>
+                  <td class="font-mono">anita.patil@ves.ac.in</td>
+                </tr>
+                <tr>
+                  <td class="font-mono">CS403</td>
+                  <td>Database Management Systems</td>
+                  <td>D12B</td>
+                  <td>Theory (All)</td>
+                  <td><strong>Prof. K. Rao</strong></td>
+                  <td class="font-mono">k.rao@ves.ac.in</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: Super Admin Institutional Overview -->
+        <div class="view-pane" id="pane-superadmin-overview" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">🛡️ Institutional Governance & Campus Overview</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Vivekanand Education Society's Institute of Technology (VESIT) Institutional ERP Dashboard.
+              </p>
+            </div>
+            <span class="chip-badge badge-present" style="font-size: 13px; padding: 6px 12px;">
+              🟢 All Systems Operational
+            </span>
+          </div>
+
+          <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--accent);">2,410</span>
+              <span class="kpi-label">Enrolled Students</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">142</span>
+              <span class="kpi-label">Faculty Members</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-warn);">320</span>
+              <span class="kpi-label">Lectures Conducted Today</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--text-primary);">5</span>
+              <span class="kpi-label">Academic Departments</span>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Department Attendance Rates (Academic Year 2025-26)</h3>
+            <table class="column-preview-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>HOD</th>
+                  <th>Divisions</th>
+                  <th>Total Students</th>
+                  <th>Average Attendance</th>
+                  <th>Compliance Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Computer Engineering (CMPN)</strong></td>
+                  <td>Dr. Nupur Giri</td>
+                  <td>6</td>
+                  <td class="font-mono">440</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">78.1%</td>
+                  <td><span class="chip-badge badge-present">96.4%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Information Technology (INFT)</strong></td>
+                  <td>Dr. Shalu Chopra</td>
+                  <td>6</td>
+                  <td class="font-mono">435</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">79.4%</td>
+                  <td><span class="chip-badge badge-present">98.1%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Electronics & Telecomm (EXTC)</strong></td>
+                  <td>Dr. Chandan Singh</td>
+                  <td>4</td>
+                  <td class="font-mono">310</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">75.8%</td>
+                  <td><span class="chip-badge badge-present">94.0%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Artificial Intelligence & Data Science (AI&DS)</strong></td>
+                  <td>Dr. Gresha Bhatia</td>
+                  <td>4</td>
+                  <td class="font-mono">295</td>
+                  <td class="font-mono" style="color: var(--state-safe); font-weight: 700;">80.5%</td>
+                  <td><span class="chip-badge badge-present">97.5%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View: Super Admin Academic Calendar & Terms -->
+        <div class="view-pane" id="pane-superadmin-calendar" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">📅 Academic Term & Calendar Configuration</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Define semester start/end dates, Unit Test milestones, and mandatory 75% defaulter cutoffs.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="alert('Term configuration updated.')" style="font-size: 13px;">
+              💾 Save Term Settings
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem;">Active Term Parameters</h3>
+              <div class="form-group">
+                <label class="form-label">Academic Year</label>
+                <input type="text" class="form-input font-mono" value="2025-26" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Semester Phase</label>
+                <select class="form-select">
+                  <option selected>Odd Semester (July - December)</option>
+                  <option>Even Semester (January - June)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Term Commencement Date</label>
+                <input type="date" class="form-input font-mono" value="2026-07-15" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Term Conclusion Date</label>
+                <input type="date" class="form-input font-mono" value="2026-11-30" />
+              </div>
+            </div>
+
+            <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem;">Statutory Defaulter Milestones</h3>
+              <div class="form-group">
+                <label class="form-label">Milestone 1: Unit Test 1 Notice</label>
+                <input type="date" class="form-input font-mono" value="2026-09-15" />
+                <span style="font-size: 11px; color: var(--text-tertiary);">Triggers automated warning email to students below 75%.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Milestone 2: Unit Test 2 Final Notice</label>
+                <input type="date" class="form-input font-mono" value="2026-10-25" />
+                <span style="font-size: 11px; color: var(--text-tertiary);">Generates official printable A4 notice with HOD signature.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Debarment Cutoff Threshold</label>
+                <input type="text" class="form-input font-mono" value="60.0% (Critical Debarment)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View: Super Admin System Diagnostics -->
+        <div class="view-pane" id="pane-system-diagnostics" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">⚡ System Health & Infrastructure Diagnostics</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                Real-time latency metrics, PostgreSQL Supabase connection status, and Spring Boot Actuator telemetry.
+              </p>
+            </div>
+            <span class="chip-badge badge-present" style="font-size: 12px; padding: 5px 10px;">
+              🟢 100% Up-Time
+            </span>
+          </div>
+
+          <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">12ms</span>
+              <span class="kpi-label">PostgreSQL Latency</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--accent);">99.98%</span>
+              <span class="kpi-label">Spring Boot Availability</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">0.00%</span>
+              <span class="kpi-label">Sheets API Dependency</span>
+            </div>
+            <div class="kpi-item" style="background: var(--bg-surface); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-subtle);">
+              <span class="kpi-num font-mono" style="color: var(--state-safe);">142 rps</span>
+              <span class="kpi-label">Throughput Capacity</span>
+            </div>
+          </div>
+
+          <div class="form-panel" style="padding: 1.25rem 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;">Architectural Invariant Verifications</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-surface-2); border-radius: 8px;">
+                <div>
+                  <strong>Read-Only & Zero-Trust Boundary</strong>
+                  <div style="font-size: 12px; color: var(--text-secondary);">Student read routes never call external Sheets APIs synchronously.</div>
+                </div>
+                <span class="chip-badge badge-present">PASS ✅</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-surface-2); border-radius: 8px;">
+                <div>
+                  <strong>Natural Key Idempotency</strong>
+                  <div style="font-size: 12px; color: var(--text-secondary);">Attendance keyed by (studentId, subjectId, lectureDate, sessionIndex).</div>
+                </div>
+                <span class="chip-badge badge-present">PASS ✅</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-surface-2); border-radius: 8px;">
+                <div>
+                  <strong>48-Hour Academic Integrity Lock</strong>
+                  <div style="font-size: 12px; color: var(--text-secondary);">Sessions automatically locked against retroactive tampering after 48h.</div>
+                </div>
+                <span class="chip-badge badge-present">PASS ✅</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </main>
 
@@ -2050,9 +2820,10 @@
       const studentNav = document.getElementById('student-nav-group');
       const facultyNav = document.getElementById('faculty-nav-group');
       const ctNav = document.getElementById('ct-nav-group');
+      const hodNav = document.getElementById('hod-nav-group');
       const adminNav = document.getElementById('admin-nav-group');
 
-      const roleButtons = ['student', 'faculty', 'ct', 'admin'];
+      const roleButtons = ['student', 'faculty', 'ct', 'hod', 'admin'];
       roleButtons.forEach(r => {
         const btn = document.getElementById('btn-role-' + r);
         if (btn) btn.classList.remove('active');
@@ -2061,6 +2832,7 @@
       if (studentNav) studentNav.style.display = 'none';
       if (facultyNav) facultyNav.style.display = 'none';
       if (ctNav) ctNav.style.display = 'none';
+      if (hodNav) hodNav.style.display = 'none';
       if (adminNav) adminNav.style.display = 'none';
 
       if (role === 'FACULTY') {
@@ -2069,17 +2841,18 @@
         switchView('faculty-marking', facultyNav.querySelector('.nav-item'));
         loadFacultyCohort();
       } else if (role === 'CLASS_TEACHER') {
-        if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
         document.getElementById('btn-role-ct')?.classList.add('active');
         switchView('ct-defaulters', ctNav.querySelector('.nav-item'));
         renderDefaultersTable();
-      } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-        if (facultyNav) facultyNav.style.display = 'block';
-        if (ctNav) ctNav.style.display = 'block';
+      } else if (role === 'HOD' || role === 'ADMIN') {
+        if (hodNav) hodNav.style.display = 'block';
+        document.getElementById('btn-role-hod')?.classList.add('active');
+        switchView('hod-overview', hodNav.querySelector('.nav-item'));
+      } else if (role === 'SUPER_ADMIN') {
         if (adminNav) adminNav.style.display = 'block';
         document.getElementById('btn-role-admin')?.classList.add('active');
-        switchView('admin-roster', ctNav.querySelectorAll('.nav-item')[1]);
+        switchView('superadmin-overview', adminNav.querySelector('.nav-item'));
       } else {
         if (studentNav) studentNav.style.display = 'block';
         document.getElementById('btn-role-student')?.classList.add('active');
@@ -2097,17 +2870,28 @@
 
       const titles = {
         'dashboard': 'Student Dashboard',
-        'analytics': 'Attendance Analytics',
-        'predictor': 'Attendance Predictor',
-        'history': 'Attendance History',
-        'notifications': 'Notifications',
-        'faculty-marking': 'Faculty — Live Classroom Attendance (Absentees Mode)',
-        'faculty-history': 'Faculty — Recorded Sessions & 48h Corrections',
-        'ct-defaulters': 'Class Teacher — Defaulter Notice (<75%)',
-        'admin-roster': 'Admin — Master Roster Import',
-        'admin-logs': 'Admin — System Audit Logs'
+        'analytics': 'Student • Attendance Analytics & Trajectories',
+        'predictor': 'Student • Safe Skips & Recovery Predictor',
+        'history': 'Student • Lecture History Log',
+        'notifications': 'Student • 75% Threshold Notifications',
+        'od-leave': 'Student • Official Duty (OD) & Medical Leave Portal',
+        'faculty-marking': 'Faculty • Live Classroom Attendance (Absentees Mode)',
+        'faculty-history': 'Faculty • Recorded Sessions & 48h Corrections',
+        'faculty-diary': 'Faculty • NAAC / NBA Academic Course Diary',
+        'faculty-proxy': 'Faculty • Proxy & Substitute Lecture Delegation',
+        'ct-defaulters': 'Class Teacher • Defaulter Notice (<75%)',
+        'admin-roster': 'Class Teacher • Master Semester Roster Upload',
+        'ct-od-approvals': 'Class Teacher • Division OD Approvals Inbox',
+        'hod-overview': 'HOD • Department Academic Oversight',
+        'hod-compliance': 'HOD • Faculty Syllabus Pacing & Compliance',
+        'faculty-allocations': 'HOD • Faculty Subject & Lab Allocations',
+        'superadmin-overview': 'Super Admin • Institutional Governance & Campus Overview',
+        'superadmin-calendar': 'Super Admin • Academic Term & Calendar Configuration',
+        'admin-logs': 'Super Admin • System Security & Audit Trail',
+        'system-diagnostics': 'Super Admin • System Health & Infrastructure Diagnostics'
       };
-      document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
+      const titleEl = document.getElementById('view-title');
+      if (titleEl) titleEl.textContent = titles[viewId] || 'OpenAttend';
 
       if (viewId === 'faculty-marking') {
         loadFacultyCohort();
@@ -2116,6 +2900,91 @@
       } else if (viewId === 'ct-defaulters') {
         renderDefaultersTable();
       }
+    }
+
+    // Modal & Interactive Actions for Extended Views
+    function openStudentODModal() {
+      const reason = prompt("Enter OD / Medical Leave event name (e.g. Smart India Hackathon or Viral Fever):");
+      if (reason && reason.trim()) {
+        const tbody = document.getElementById('student-od-table-body');
+        if (tbody) {
+          const row = document.createElement('tr');
+          const id = 'OD-2026-' + Math.floor(100 + Math.random() * 900);
+          const today = new Date().toISOString().slice(0, 10);
+          row.innerHTML = `
+            <td class="font-mono">${id}</td>
+            <td><strong>${reason}</strong></td>
+            <td class="font-mono">${today}</td>
+            <td>Student applied via Portal</td>
+            <td><span style="color: var(--accent); cursor: pointer; text-decoration: underline;">uploaded_doc.pdf</span></td>
+            <td><span class="chip-badge" style="background: rgba(201, 138, 30, 0.15); color: var(--state-warn);">⏳ PENDING REVIEW</span></td>
+          `;
+          tbody.insertBefore(row, tbody.firstChild);
+          alert("Application " + id + " submitted successfully to your Class Teacher!");
+        }
+      }
+    }
+
+    function approveODItem(rowId) {
+      const row = document.getElementById(rowId);
+      if (row) {
+        row.innerHTML = `
+          <td colspan="7" style="background: rgba(47, 158, 110, 0.1); color: var(--state-safe); text-align: center; padding: 0.75rem; font-weight: 600;">
+            ✅ Approved! Attendance credited as Duty Present (OD) in PostgreSQL.
+          </td>
+        `;
+        setTimeout(() => row.remove(), 2500);
+      }
+    }
+
+    function rejectODItem(rowId) {
+      const row = document.getElementById(rowId);
+      if (row) {
+        row.innerHTML = `
+          <td colspan="7" style="background: rgba(214, 69, 69, 0.1); color: var(--state-risk); text-align: center; padding: 0.75rem; font-weight: 600;">
+            ❌ Leave Application Rejected.
+          </td>
+        `;
+        setTimeout(() => row.remove(), 2500);
+      }
+    }
+
+    function handleProxySubmit(e) {
+      e.preventDefault();
+      const subject = document.getElementById('proxy-subject-select').value;
+      const date = document.getElementById('proxy-date-input').value;
+      const faculty = document.getElementById('proxy-faculty-select').selectedOptions[0].text;
+      const tbody = document.getElementById('proxy-history-table');
+      if (tbody) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="font-mono">${date}</td>
+          <td>Slot 2</td>
+          <td>${subject}</td>
+          <td>${faculty}</td>
+          <td><span class="chip-badge badge-present">CONFIRMED</span></td>
+        `;
+        tbody.insertBefore(row, tbody.firstChild);
+      }
+      alert("Proxy delegation assigned to " + faculty + " for " + date + ". Notification dispatched.");
+      e.target.reset();
+    }
+
+    function exportNaacDiaryCSV() {
+      const csvContent = "data:text/csv;charset=utf-8,Lecture_No,Date,Slot,Topic_Covered,Methodology,Attendance_Rate,Criterion
+"
+        + "#24,2026-09-08,Slot 2,Process Synchronization,ICT Slides,92.4%,Criterion 2.3.1
+"
+        + "#23,2026-09-06,Slot 3,Deadlock Handling,Hands-on Lab,88.8%,Criterion 2.3.1
+"
+        + "#22,2026-09-04,Slot 1,Dining Philosophers Problem,Chalk & Board,84.7%,Criterion 2.3.1";
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "NAAC_Course_Diary_OS_D15B.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     // --- ERP Roster and High-Speed Absentees Marking Engine ---

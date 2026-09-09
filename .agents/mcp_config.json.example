@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "v0": {
+      "command": "npx",
+      "args": ["-y", "v0-mcp-server"],
+      "env": {
+        "V0_API_KEY": "${V0_API_KEY}"
+      }
+    }
+  }
+}
