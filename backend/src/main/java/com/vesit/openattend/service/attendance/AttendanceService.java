@@ -35,18 +35,12 @@ public class AttendanceService {
                 ? attendanceRecordRepository.findByStudentId(student.getId())
                 : Collections.emptyList();
 
-        int present = 0;
-        int absent = 0;
-
-        for (AttendanceRecord r : records) {
-            if (r.getStatus() == AttendanceStatus.PRESENT) {
-                present++;
-            } else if (r.getStatus() == AttendanceStatus.ABSENT) {
-                absent++;
-            }
-        }
-
-        int total = present + absent;
+        // DUTY_PRESENT (approved OD / medical leave) is counted as attended by the shared rule, so
+        // the ring on the student dashboard and the defaulter list can never disagree.
+        AttendancePercentage.Tally tally = AttendancePercentage.tally(records);
+        int present = tally.attended();
+        int absent = tally.absent();
+        int total = tally.conducted();
         // If DB has records, use live; if 0, use canonical demo baseline (101/126)
         if (total == 0) {
             present = 101;
@@ -89,13 +83,9 @@ public class AttendanceService {
                 List<AttendanceRecord> subRecords = entry.getValue();
                 String name = subRecords.get(0).getSubject().getName();
 
-                int pres = 0;
-                int abs = 0;
-                for (AttendanceRecord r : subRecords) {
-                    if (r.getStatus() == AttendanceStatus.PRESENT) pres++;
-                    else if (r.getStatus() == AttendanceStatus.ABSENT) abs++;
-                }
-                int tot = pres + abs;
+                AttendancePercentage.Tally subjectTally = AttendancePercentage.tally(subRecords);
+                int pres = subjectTally.attended();
+                int tot = subjectTally.conducted();
                 double pct = tot > 0 ? ((double) pres / tot) * 100.0 : 0.0;
                 pct = BigDecimal.valueOf(pct).setScale(1, RoundingMode.HALF_UP).doubleValue();
 
@@ -170,7 +160,7 @@ public class AttendanceService {
                     .date(r.getLectureDate().format(dtf))
                     .subject(r.getSubject().getCode())
                     .subjectName(r.getSubject().getName())
-                    .status(r.getStatus() == AttendanceStatus.PRESENT ? "Present" : "Absent")
+                    .status(historyLabel(r.getStatus()))
                     .faculty(r.getFaculty() != null ? r.getFaculty() : "Faculty")
                     .remarks(r.getRemarks())
                     .build());
@@ -209,6 +199,18 @@ public class AttendanceService {
                         AttendanceAnalyticsResponse.SubjectDeltaDto.builder().code("CS401").name("Data Structures").pct(85.7).delta(0.5).status("SAFE").build()
                 ))
                 .build();
+    }
+
+    /**
+     * How one record reads on the history list. An approved OD or medical leave shows as
+     * "Duty (OD)" rather than "Present", so a student can see why a lecture they missed is still
+     * counting for them.
+     */
+    private String historyLabel(AttendanceStatus status) {
+        if (status == AttendanceStatus.DUTY_PRESENT) {
+            return "Duty (OD)";
+        }
+        return status == AttendanceStatus.PRESENT ? "Present" : "Absent";
     }
 
     private Student resolveStudent(String rollNo) {

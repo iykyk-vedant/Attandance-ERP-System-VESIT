@@ -230,6 +230,50 @@
     }
 
     /* Top Bar */
+    /* Connectivity + offline queue indicators (PWA) */
+    .offline-pill {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .offline-pill.pill-offline {
+      background: rgba(139, 137, 127, 0.16);
+      color: var(--state-neutral);
+      border-color: var(--state-neutral);
+    }
+
+    .offline-pill.pill-syncing {
+      background: rgba(47, 111, 94, 0.14);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .offline-pill.pill-warn {
+      background: rgba(214, 69, 69, 0.12);
+      color: var(--state-risk);
+      border-color: var(--state-risk);
+    }
+
+    .offline-queue-strip {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.7rem 0.9rem;
+      border-radius: 10px;
+      font-size: 12.5px;
+      background: rgba(201, 138, 30, 0.12);
+      border: 1px solid var(--state-warn);
+      color: var(--text-primary);
+    }
+
     header.topbar {
       height: 60px;
       background: var(--bg-surface);
@@ -1195,6 +1239,7 @@
         <div class="nav-item" onclick="switchView('predictor', this)"><span>⚡</span> Predictor</div>
         <div class="nav-item" onclick="switchView('history', this)"><span>📜</span> History</div>
         <div class="nav-item" onclick="switchView('notifications', this)"><span>🔔</span> Notifications</div>
+        <div class="nav-item" onclick="switchView('leave', this)"><span>📝</span> OD / Medical Leave</div>
       </div>
 
       <!-- Faculty Navigation Group -->
@@ -1207,6 +1252,7 @@
       <!-- Class Teacher Navigation Group -->
       <div class="nav-section" id="ct-nav-group" style="display: none;">
         <div class="nav-section-title">DIVISION MGMT</div>
+        <div class="nav-item" onclick="switchView('leave-approvals', this)"><span>🗂️</span> OD / Leave Approvals</div>
         <div class="nav-item" onclick="switchView('ct-defaulters', this)"><span>📑</span> Defaulter Notice (<75%)</div>
         <div class="nav-item" onclick="switchView('admin-roster', this)"><span>👥</span> Master Roster Upload</div>
       </div>
@@ -1316,6 +1362,7 @@
             <div class="pulse-dot"></div>
             <span id="sync-pulse-text">Synced 4m ago • Google Sheets API</span>
           </div>
+          <span class="offline-pill" id="offline-status-pill" style="display: none;"></span>
           <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
         </div>
       </header>
@@ -1642,6 +1689,102 @@
           </div>
         </div>
 
+        <!-- View 6: Paperless OD / Medical Leave (Student) -->
+        <div class="view-pane" id="pane-leave" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Official Duty &amp; Medical Leave</h3>
+            <p style="color: var(--text-secondary); font-size: 12px;">
+              Attach the event letter, invite or medical certificate once. Approved leave is credited
+              as duty-present and counts towards your percentage — no paper letter to carry round campus.
+            </p>
+          </div>
+
+          <form class="form-panel" id="leave-submit-form" onsubmit="submitLeaveRequest(event)"
+                style="padding: 1.25rem 1.5rem; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem;">
+              <div class="form-group">
+                <label class="form-label" for="leave-type-select">Leave Type</label>
+                <select class="form-select" id="leave-type-select" required>
+                  <option value="OFFICIAL_DUTY">Official Duty (hackathon, sports, fest)</option>
+                  <option value="MEDICAL">Medical / Sick Leave</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="leave-from-input">From Date</label>
+                <input type="date" class="form-input font-mono" id="leave-from-input" required onchange="syncLeaveToDate()" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="leave-to-input">To Date <span style="font-weight: 400; color: var(--text-tertiary);">(inclusive)</span></label>
+                <input type="date" class="form-input font-mono" id="leave-to-input" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-event-input">Event / Reason Title</label>
+              <input type="text" class="form-input" id="leave-event-input" maxlength="255" required
+                     placeholder="e.g. Smart India Hackathon Grand Finale, UTSAV organising committee, Viral fever" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-reason-input">Details <span style="font-weight: 400; color: var(--text-tertiary);">(optional)</span></label>
+              <textarea class="form-input" id="leave-reason-input" rows="2" maxlength="2000"
+                        placeholder="Anything the approving teacher should know."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="leave-proof-input">Proof Attachment <span style="color: var(--state-risk);">*</span></label>
+              <input type="file" class="form-input" id="leave-proof-input" required
+                     accept="application/pdf,image/jpeg,image/png,image/webp" />
+              <span style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                PDF, JPEG, PNG or WebP, up to 5 MB. Scanned letters and phone photos both work.
+              </span>
+            </div>
+
+            <div id="leave-feedback-banner" style="display: none; padding: 0.85rem 1rem; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
+            <button type="submit" class="btn btn-primary" id="leave-submit-btn" style="font-size: 14px; padding: 0.75rem 1.25rem;">
+              📤 Submit for Approval
+            </button>
+          </form>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.05rem; font-weight: 600;">My Requests</h3>
+            <button class="btn btn-secondary" onclick="loadMyLeaveRequests()" style="font-size: 12px;">🔄 Refresh</button>
+          </div>
+          <div class="roll-call-stack" id="my-leave-stack"></div>
+        </div>
+
+        <!-- Class Teacher View: OD / Medical Leave Approval Queue -->
+        <div class="view-pane" id="pane-leave-approvals" style="display: none; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; font-weight: 700;">🗂️ OD &amp; Medical Leave Approvals</h2>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 2px;">
+                One click decides it. Approving credits the student's absences in the window as
+                duty-present and recalculates their percentage and defaulter status immediately.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="leave-queue-status">Queue</label>
+                <select class="form-select" id="leave-queue-status" onchange="loadLeaveApprovalQueue()" style="font-size: 13px;">
+                  <option value="PENDING">Pending decisions</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="ALL">All requests</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" onclick="loadLeaveApprovalQueue()" style="font-size: 13px;">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div id="leave-approval-banner" style="display: none; padding: 0.85rem 1rem; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
+
+          <div class="roll-call-stack" id="leave-approval-stack"></div>
+        </div>
+
         <!-- Faculty View 1: Classroom Attendance Marking (High-Speed Absentees Mode) -->
         <div class="view-pane" id="pane-faculty-marking" style="display: none; flex-direction: column; gap: 1.25rem;">
           <div class="admin-hero-banner" style="max-height: 140px;">
@@ -1719,6 +1862,13 @@
             </div>
           </div>
 
+          <!-- Substitute lecture banner: shown only when the selected slot was delegated to this teacher -->
+          <div id="marking-proxy-banner" style="display: none; padding: 0.7rem 0.9rem; border-radius: 10px;
+               background: var(--accent-dim); border: 1px solid var(--accent); font-size: 13px; color: var(--text-primary);">
+            <strong>🔁 Proxy lecture.</strong>
+            <span id="marking-proxy-detail"></span>
+          </div>
+
           <!-- Sticky Live Attendance Counter Bar -->
           <div class="counter-bar-card">
             <div class="counter-stat">
@@ -1764,6 +1914,11 @@
 
           <!-- Submission Action Bar -->
           <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="offline-queue-strip" id="offline-queue-strip">
+              <span id="offline-queue-text"></span>
+              <button class="btn btn-secondary" id="offline-sync-now-btn" onclick="manualSyncNow()"
+                      style="font-size: 12px; padding: 0.35rem 0.7rem; margin-left: auto;">🔄 Sync Now</button>
+            </div>
             <div id="marking-feedback-banner" style="display: none; padding: 1rem; border-radius: 10px; font-size: 13px; font-weight: 600;"></div>
             <button class="btn btn-primary" id="btn-submit-marking" onclick="submitClassroomAttendance()" style="font-size: 15px; padding: 0.9rem 1.5rem; width: 100%;">
               ⚡ Submit Classroom Attendance (< 10s) →
@@ -1920,6 +2075,7 @@
                   <th>Student Name</th>
                   <th>Total Lectures</th>
                   <th>Attended</th>
+                  <th>Duty (OD)</th>
                   <th>Overall Attendance</th>
                   <th>Shortfall</th>
                   <th>Status</th>
@@ -2066,25 +2222,33 @@
       if (role === 'FACULTY') {
         if (facultyNav) facultyNav.style.display = 'block';
         document.getElementById('btn-role-faculty')?.classList.add('active');
-        switchView('faculty-marking', facultyNav.querySelector('.nav-item'));
-        loadFacultyCohort();
+        switchView('faculty-marking', navItemFor('faculty-marking'));
       } else if (role === 'CLASS_TEACHER') {
         if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
         document.getElementById('btn-role-ct')?.classList.add('active');
-        switchView('ct-defaulters', ctNav.querySelector('.nav-item'));
+        switchView('ct-defaulters', navItemFor('ct-defaulters'));
         renderDefaultersTable();
       } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
         if (facultyNav) facultyNav.style.display = 'block';
         if (ctNav) ctNav.style.display = 'block';
         if (adminNav) adminNav.style.display = 'block';
         document.getElementById('btn-role-admin')?.classList.add('active');
-        switchView('admin-roster', ctNav.querySelectorAll('.nav-item')[1]);
+        switchView('admin-roster', navItemFor('admin-roster'));
       } else {
         if (studentNav) studentNav.style.display = 'block';
         document.getElementById('btn-role-student')?.classList.add('active');
-        switchView('dashboard', studentNav.querySelector('.nav-item'));
+        switchView('dashboard', navItemFor('dashboard'));
       }
+    }
+
+    /**
+     * The sidebar entry for a view, found by the view it opens rather than by its position, so
+     * adding an item to a nav group never silently highlights the wrong row.
+     */
+    function navItemFor(viewId) {
+      return Array.from(document.querySelectorAll('.nav-item'))
+        .find(item => (item.getAttribute('onclick') || '').includes("'" + viewId + "'")) || null;
     }
 
     function switchView(viewId, el) {
@@ -2101,6 +2265,8 @@
         'predictor': 'Attendance Predictor',
         'history': 'Attendance History',
         'notifications': 'Notifications',
+        'leave': 'Student — Paperless OD & Medical Leave',
+        'leave-approvals': 'Teacher — OD & Medical Leave Approvals',
         'faculty-marking': 'Faculty — Live Classroom Attendance (Absentees Mode)',
         'faculty-history': 'Faculty — Recorded Sessions & 48h Corrections',
         'ct-defaulters': 'Class Teacher — Defaulter Notice (<75%)',
@@ -2110,9 +2276,13 @@
       document.getElementById('view-title').textContent = titles[viewId] || 'OpenAttend';
 
       if (viewId === 'faculty-marking') {
-        loadFacultyCohort();
+        initFacultyMarking();
       } else if (viewId === 'faculty-history') {
         loadFacultySessions();
+      } else if (viewId === 'leave') {
+        loadMyLeaveRequests();
+      } else if (viewId === 'leave-approvals') {
+        loadLeaveApprovalQueue();
       } else if (viewId === 'ct-defaulters') {
         renderDefaultersTable();
       }
@@ -2166,7 +2336,508 @@
     let selectedSessionForCorrection = null;
     let corrAbsentStudentIds = new Set();
 
+    /* ============================================================================
+       OFFLINE-FIRST ATTENDANCE LAYER (PWA)
+       Classrooms and basement labs routinely lose connectivity mid-lecture, so the
+       roster is pre-cached into IndexedDB at login and submissions made while
+       offline are queued in `pending_submissions` and replayed automatically once
+       the browser fires `online`.
+       ============================================================================ */
+    const OFFLINE_DB_NAME = 'openattend-offline';
+    const OFFLINE_DB_VERSION = 1;
+    const STORE_ROSTERS = 'rosters';
+    const STORE_PENDING = 'pending_submissions';
+    const STORE_META = 'meta';
+    const SYNC_TAG = 'openattend-attendance-sync';
+
+    let offlineDbPromise = null;
+    let syncInFlight = false;
+
+    function openOfflineDb() {
+      if (offlineDbPromise) return offlineDbPromise;
+
+      offlineDbPromise = new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) {
+          reject(new Error('IndexedDB unavailable'));
+          return;
+        }
+
+        const req = indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
+
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE_ROSTERS)) {
+            db.createObjectStore(STORE_ROSTERS, { keyPath: 'key' });
+          }
+          if (!db.objectStoreNames.contains(STORE_PENDING)) {
+            const pending = db.createObjectStore(STORE_PENDING, { keyPath: 'id' });
+            pending.createIndex('status', 'status', { unique: false });
+            pending.createIndex('queuedAt', 'queuedAt', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(STORE_META)) {
+            db.createObjectStore(STORE_META, { keyPath: 'key' });
+          }
+        };
+
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      }).catch((err) => {
+        // Private browsing / storage blocked: reset so a later attempt can retry.
+        offlineDbPromise = null;
+        throw err;
+      });
+
+      return offlineDbPromise;
+    }
+
+    /** Runs `action(store)` inside a transaction and resolves with the request result. */
+    function idbRequest(storeName, mode, action) {
+      return openOfflineDb().then((db) => new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, mode);
+        const req = action(tx.objectStore(storeName));
+        tx.onabort = () => reject(tx.error);
+        if (req) {
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        } else {
+          tx.oncomplete = () => resolve(undefined);
+        }
+      }));
+    }
+
+    function rosterKey(division, batch) {
+      return (division || 'ALL') + '::' + (batch || 'ALL');
+    }
+
+    /* ---------------------------------- Roster cache -------------------------------- */
+
+    async function cacheRosterOffline(division, batch, roster) {
+      if (!Array.isArray(roster) || roster.length === 0) return;
+      try {
+        await idbRequest(STORE_ROSTERS, 'readwrite', (store) => store.put({
+          key: rosterKey(division, batch),
+          division: division,
+          batch: batch || null,
+          roster: roster,
+          cachedAt: new Date().toISOString()
+        }));
+      } catch (e) {
+        console.warn('[OpenAttend] Roster cache write failed', e);
+      }
+    }
+
+    async function readCachedRoster(division, batch) {
+      try {
+        const row = await idbRequest(STORE_ROSTERS, 'readonly', (store) => store.get(rosterKey(division, batch)));
+        return row && Array.isArray(row.roster) && row.roster.length > 0 ? row.roster : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    /** Cohorts the marking screen can switch to, so any of them opens offline. */
+    function markingCohorts() {
+      const select = document.getElementById('marking-division-select');
+      const values = select
+        ? Array.from(select.options).map((o) => o.value)
+        : ['D12B', 'D12B-B1', 'D12B-B2', 'D12B-B3'];
+
+      return values.map((value) => {
+        const parts = value.split('-');
+        return { division: parts[0], batch: parts[1] || null };
+      });
+    }
+
+    /**
+     * Pulls today's assigned rosters into IndexedDB right after login so the marking
+     * UI is fully usable before the teacher walks into a dead-zone classroom.
+     */
+    async function precacheTodayRosters() {
+      if (!navigator.onLine) return;
+      const role = currentUserSession && currentUserSession.role;
+      if (['FACULTY', 'CLASS_TEACHER', 'ADMIN', 'SUPER_ADMIN'].indexOf(role) === -1) return;
+
+      const cohorts = markingCohorts();
+
+      // Backend allocations take priority; the dropdown list is the fallback.
+      try {
+        const res = await fetch('/api/v1/faculty/my-subjects', { headers: authHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          (data.subjects || []).forEach((s) => {
+            const exists = cohorts.some((c) => c.division === s.division && (c.batch || null) === (s.batch || null));
+            if (!exists) cohorts.push({ division: s.division, batch: s.batch || null });
+          });
+        }
+      } catch (e) { /* offline or unauthorized: dropdown cohorts still get cached */ }
+
+      let cached = 0;
+      for (const cohort of cohorts) {
+        try {
+          const qs = 'division=' + encodeURIComponent(cohort.division) +
+            (cohort.batch ? '&batch=' + encodeURIComponent(cohort.batch) : '');
+          const res = await fetch('/api/v1/faculty/roster?' + qs, { headers: authHeaders() });
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.success && Array.isArray(data.roster) && data.roster.length > 0) {
+            await cacheRosterOffline(cohort.division, cohort.batch, data.roster);
+            cached++;
+          }
+        } catch (e) { /* one unreachable cohort must not abort the rest */ }
+      }
+
+      if (cached > 0) {
+        try {
+          await idbRequest(STORE_META, 'readwrite', (store) => store.put({
+            key: 'rosters_precached_at',
+            value: new Date().toISOString(),
+            cohorts: cached
+          }));
+        } catch (e) { /* meta bookkeeping is best effort */ }
+        console.log('[OpenAttend] Pre-cached ' + cached + ' roster(s) for offline marking');
+      }
+    }
+
+    /* ------------------------------- Pending submissions ---------------------------- */
+
+    async function queuePendingSubmission(payload) {
+      const record = {
+        id: 'pend_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        payload: payload,
+        status: 'PENDING',
+        attempts: 0,
+        lastError: null,
+        queuedAt: new Date().toISOString()
+      };
+      await idbRequest(STORE_PENDING, 'readwrite', (store) => store.add(record));
+      await requestBackgroundSync();
+      return record;
+    }
+
+    function listPendingSubmissions() {
+      return idbRequest(STORE_PENDING, 'readonly', (store) => store.getAll())
+        .then((rows) => (rows || []).sort((a, b) => a.queuedAt.localeCompare(b.queuedAt)))
+        .catch(() => []);
+    }
+
+    function deletePendingSubmission(id) {
+      return idbRequest(STORE_PENDING, 'readwrite', (store) => store.delete(id)).catch(() => {});
+    }
+
+    function savePendingSubmission(record) {
+      return idbRequest(STORE_PENDING, 'readwrite', (store) => store.put(record)).catch(() => {});
+    }
+
+    /** Registers a Background Sync so the queue drains even if the tab is backgrounded. */
+    async function requestBackgroundSync() {
+      try {
+        if (!navigator.serviceWorker) return;
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && 'sync' in reg) await reg.sync.register(SYNC_TAG);
+      } catch (e) { /* unsupported (Safari/Firefox): the `online` listener covers us */ }
+    }
+
+    /**
+     * Replays every queued submission in the order it was marked.
+     * A 409 means the session already exists server side, which is the idempotent
+     * success case for a replay, so the record is dropped rather than retried.
+     * Transport failures stop the drain and leave the queue intact for the next `online`.
+     */
+    async function syncPendingSubmissions(options) {
+      const silent = !!(options && options.silent);
+      if (syncInFlight || !navigator.onLine) {
+        return { synced: 0, duplicates: 0, rejected: 0, remaining: null };
+      }
+
+      const queue = await listPendingSubmissions();
+      const retryable = queue.filter((r) => r.status === 'PENDING');
+      if (retryable.length === 0) {
+        await refreshOfflineQueueUi();
+        return { synced: 0, duplicates: 0, rejected: 0, remaining: 0 };
+      }
+
+      syncInFlight = true;
+      let synced = 0, duplicates = 0, rejected = 0, stopped = false;
+
+      try {
+        for (const record of retryable) {
+          let res;
+          try {
+            res = await fetch('/api/v1/faculty/attendance/submit', {
+              method: 'POST',
+              headers: authHeaders(true),
+              body: JSON.stringify(record.payload)
+            });
+          } catch (err) {
+            stopped = true; // Connection dropped again: resume on the next `online`.
+            break;
+          }
+
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data.session) currentFacultySessions.unshift(data.session);
+            await deletePendingSubmission(record.id);
+            synced++;
+          } else if (res.status === 409) {
+            await deletePendingSubmission(record.id);
+            duplicates++;
+          } else if (res.status === 401 || res.status === 403 || res.status >= 500) {
+            // Expired token or a server-side outage: keep the attendance data queued.
+            record.attempts++;
+            record.lastError = 'HTTP ' + res.status;
+            await savePendingSubmission(record);
+            stopped = true;
+            break;
+          } else {
+            const data = await res.json().catch(() => ({}));
+            record.status = 'REJECTED';
+            record.attempts++;
+            record.lastError = data.message || data.error || ('HTTP ' + res.status);
+            await savePendingSubmission(record);
+            rejected++;
+          }
+        }
+      } finally {
+        syncInFlight = false;
+      }
+
+      const remaining = (await listPendingSubmissions()).filter((r) => r.status === 'PENDING').length;
+      await refreshOfflineQueueUi();
+
+      if (!silent && (synced > 0 || duplicates > 0 || rejected > 0)) {
+        showSyncResultBanner({ synced, duplicates, rejected, remaining, stopped });
+      }
+      if ((synced > 0 || duplicates > 0) && typeof renderFacultySessions === 'function') {
+        renderFacultySessions(currentFacultySessions);
+      }
+
+      return { synced, duplicates, rejected, remaining };
+    }
+
+    /* ------------------------------------ Offline UI -------------------------------- */
+
+    function setOfflineBannerMessage(html, tone) {
+      const banner = document.getElementById('marking-feedback-banner');
+      if (!banner) return;
+      const palette = {
+        offline: { bg: 'rgba(201, 138, 30, 0.14)', border: 'var(--state-warn)', color: 'var(--state-warn)' },
+        success: { bg: 'rgba(47, 158, 110, 0.15)', border: 'var(--state-safe)', color: 'var(--state-safe)' },
+        error: { bg: 'rgba(214, 69, 69, 0.12)', border: 'var(--state-risk)', color: 'var(--state-risk)' }
+      }[tone] || {};
+      banner.style.display = 'block';
+      banner.style.background = palette.bg;
+      banner.style.border = '1px solid ' + palette.border;
+      banner.style.color = palette.color;
+      banner.innerHTML = html;
+    }
+
+    function showOfflineQueuedBanner(record, pendingCount) {
+      const p = record.payload;
+      setOfflineBannerMessage(
+        '\u{1F4F4} <strong>Saved offline. Will sync automatically when connected.</strong><br>' +
+        '<span style="font-size: 12px; color: var(--text-primary); margin-top: 4px; display: inline-block;">' +
+        p.division + (p.batch ? ' • ' + p.batch : '') + ' • Slot ' + p.sessionIndex +
+        ' • ' + p.lectureDate + ' • ' + p.absentStudentIds.length + ' absentee(s) queued. ' +
+        pendingCount + ' submission(s) waiting to sync.' +
+        '</span>',
+        'offline'
+      );
+    }
+
+    function showSyncResultBanner(result) {
+      if (result.rejected > 0 && result.synced === 0 && result.duplicates === 0) {
+        setOfflineBannerMessage(
+          '⚠️ <strong>' + result.rejected + ' queued submission(s) were rejected by the server.</strong> Review the queue below.',
+          'error'
+        );
+        return;
+      }
+
+      const parts = [];
+      if (result.synced > 0) parts.push(result.synced + ' synced');
+      if (result.duplicates > 0) parts.push(result.duplicates + ' already recorded');
+      if (result.rejected > 0) parts.push(result.rejected + ' rejected');
+      if (result.remaining > 0) parts.push(result.remaining + ' still queued');
+
+      setOfflineBannerMessage(
+        '✅ <strong>Offline attendance synced.</strong><br>' +
+        '<span style="font-size: 12px; color: var(--text-primary); margin-top: 4px; display: inline-block;">' +
+        parts.join(' • ') + (result.stopped ? ' • connection dropped, will resume automatically' : '') +
+        '</span>',
+        'success'
+      );
+      setTimeout(() => {
+        const banner = document.getElementById('marking-feedback-banner');
+        if (banner) banner.style.display = 'none';
+      }, 8000);
+    }
+
+    /** Repaints the topbar connectivity pill and the marking screen queue strip. */
+    async function refreshOfflineQueueUi() {
+      const queue = await listPendingSubmissions();
+      const pending = queue.filter((r) => r.status === 'PENDING').length;
+      const rejected = queue.filter((r) => r.status === 'REJECTED').length;
+      const online = navigator.onLine;
+
+      const pill = document.getElementById('offline-status-pill');
+      if (pill) {
+        pill.style.display = (online && pending === 0 && rejected === 0) ? 'none' : 'inline-flex';
+        pill.className = 'offline-pill ' + (online ? (pending > 0 ? 'pill-syncing' : 'pill-warn') : 'pill-offline');
+        pill.textContent = !online
+          ? (pending > 0 ? '\u{1F4F4} Offline • ' + pending + ' queued' : '\u{1F4F4} Offline mode')
+          : (pending > 0 ? '\u{1F504} Syncing ' + pending + ' queued…' : '⚠️ ' + rejected + ' rejected');
+      }
+
+      const strip = document.getElementById('offline-queue-strip');
+      const stripText = document.getElementById('offline-queue-text');
+      if (strip && stripText) {
+        strip.style.display = (pending > 0 || rejected > 0) ? 'flex' : 'none';
+        const bits = [];
+        if (pending > 0) bits.push('<strong>' + pending + '</strong> submission(s) saved offline, waiting to sync');
+        if (rejected > 0) bits.push('<strong>' + rejected + '</strong> rejected by server');
+        stripText.innerHTML = '\u{1F4E5} ' + bits.join(' • ');
+      }
+
+      const syncBtn = document.getElementById('offline-sync-now-btn');
+      if (syncBtn) syncBtn.disabled = !online || pending === 0;
+    }
+
+    async function handleConnectivityChange() {
+      await refreshOfflineQueueUi();
+      if (navigator.onLine) {
+        await syncPendingSubmissions();
+        precacheTodayRosters();
+      }
+    }
+
+    async function manualSyncNow() {
+      const btn = document.getElementById('offline-sync-now-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Syncing…'; }
+      try {
+        await syncPendingSubmissions();
+      } finally {
+        if (btn) btn.textContent = '\u{1F504} Sync Now';
+        await refreshOfflineQueueUi();
+      }
+    }
+
+    /** Bearer headers for API calls; `json` adds the Content-Type for request bodies. */
+    function authHeaders(json) {
+      const headers = json ? { 'Content-Type': 'application/json' } : {};
+      const token = currentUserSession && currentUserSession.accessToken;
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
+
+    /** Persists a submission to `pending_submissions` and confirms it is safe. */
+    async function queueAttendanceOffline(payload) {
+      try {
+        const record = await queuePendingSubmission(payload);
+        const pending = (await listPendingSubmissions()).filter((r) => r.status === 'PENDING').length;
+        showOfflineQueuedBanner(record, pending);
+        await refreshOfflineQueueUi();
+      } catch (e) {
+        showMarkingError('Could not save offline: ' + ((e && e.message) || 'storage unavailable') +
+          '. Keep this tab open and retry once the connection returns.');
+      }
+    }
+
+    /** Cohort rosters carry student PII, so they are dropped when the teacher signs out. */
+    async function clearCachedRosters() {
+      try {
+        await idbRequest(STORE_ROSTERS, 'readwrite', (store) => store.clear());
+      } catch (e) { /* nothing cached yet */ }
+    }
+
+    /**
+     * Subjects offered in the marking dropdown, in dropdown order. Entries flagged `proxy` are
+     * lectures delegated to this teacher for today, so a substitute can mark the slot they were
+     * handed without it appearing under anyone else's name.
+     */
+    let facultySubjectCatalog = [];
+
+    async function initFacultyMarking() {
+      await loadMarkingSubjects();
+      applySelectedSubjectContext();
+      await loadFacultyCohort();
+    }
+
+    async function loadMarkingSubjects() {
+      const select = document.getElementById('marking-subject-select');
+      if (!select || !navigator.onLine) return;
+
+      try {
+        const res = await fetch('/api/v1/faculty/my-subjects', { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const subjects = data.subjects || [];
+        if (subjects.length === 0) return; // keep the static options rather than emptying the dropdown
+
+        const previous = select.value;
+        facultySubjectCatalog = subjects;
+        select.innerHTML = '';
+
+        subjects.forEach((s) => {
+          const opt = document.createElement('option');
+          opt.value = s.subjectId;
+          opt.textContent = (s.proxy ? '🔁 ' : '') + s.subjectCode + ' — ' + s.subjectName +
+            (s.proxy ? ' (Proxy for ' + s.proxyForFacultyEmail + ')' : '');
+          select.appendChild(opt);
+        });
+
+        // A subject can appear twice (own allocation and a delegation), so restore by index.
+        const previousIndex = subjects.findIndex((s) => s.subjectId === previous);
+        select.selectedIndex = previousIndex >= 0 ? previousIndex : 0;
+      } catch (e) { /* offline: the static options stay usable */ }
+    }
+
+    /** Points the cohort, slot and proxy banner at whichever subject is selected. */
+    function applySelectedSubjectContext() {
+      const select = document.getElementById('marking-subject-select');
+      const entry = facultySubjectCatalog[select ? select.selectedIndex : -1];
+      const banner = document.getElementById('marking-proxy-banner');
+
+      if (!entry) {
+        if (banner) banner.style.display = 'none';
+        return;
+      }
+
+      selectCohortOption(entry.division, entry.batch);
+
+      if (entry.proxy && entry.proxySessionIndex) {
+        const slot = document.getElementById('marking-slot-select');
+        if (slot) slot.value = String(entry.proxySessionIndex);
+      }
+
+      if (banner) {
+        banner.style.display = entry.proxy ? 'block' : 'none';
+        if (entry.proxy) {
+          document.getElementById('marking-proxy-detail').textContent =
+            'You are taking ' + entry.subjectCode + ' for ' + entry.proxyForFacultyEmail +
+            (entry.proxySessionIndex ? ' (Slot ' + entry.proxySessionIndex + ' only)' : ' (all slots today)') +
+            '. Reason: ' + (entry.proxyReason || '—') +
+            '. The session is recorded against your name and flagged as a proxy.';
+        }
+      }
+    }
+
+    /** Selects the cohort for a subject, adding the option when the division is not listed yet. */
+    function selectCohortOption(division, batch) {
+      const select = document.getElementById('marking-division-select');
+      if (!select || !division) return;
+
+      const value = batch ? division + '-' + batch : division;
+      if (!Array.from(select.options).some((o) => o.value === value)) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = batch ? (division + ' • Batch ' + batch) : (division + ' (Full Division)');
+        select.appendChild(opt);
+      }
+      select.value = value;
+    }
+
     function onMarkingSubjectChange() {
+      applySelectedSubjectContext();
       loadFacultyCohort();
     }
 
@@ -2185,20 +2856,24 @@
         batch = parts[1];
       }
 
-      const token = currentUserSession?.accessToken;
-      const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-
-      try {
-        const res = await fetch(`/api/v1/faculty/roster?division=${division}${batch ? '&batch=' + batch : ''}`, { headers });
-        const data = await res.json();
-        if (data.success && data.roster && data.roster.length > 0) {
-          currentCohort = data.roster;
-        } else {
-          currentCohort = filterCohortLocally(division, batch);
-        }
-      } catch (e) {
-        currentCohort = filterCohortLocally(division, batch);
+      // Offline-first: the network roster is authoritative and is re-cached on every
+      // successful fetch; IndexedDB serves it when the classroom has no signal.
+      let roster = null;
+      if (navigator.onLine) {
+        try {
+          const qs = 'division=' + encodeURIComponent(division) +
+            (batch ? '&batch=' + encodeURIComponent(batch) : '');
+          const res = await fetch('/api/v1/faculty/roster?' + qs, { headers: authHeaders() });
+          const data = await res.json();
+          if (data.success && data.roster && data.roster.length > 0) {
+            roster = data.roster;
+            cacheRosterOffline(division, batch, roster);
+          }
+        } catch (e) { /* fall through to the offline cache */ }
       }
+
+      if (!roster) roster = await readCachedRoster(division, batch);
+      currentCohort = roster || filterCohortLocally(division, batch);
 
       absentStudentIds.clear();
       renderFacultyChips();
@@ -2321,42 +2996,31 @@
         absentStudentIds: Array.from(absentStudentIds)
       };
 
-      const token = currentUserSession?.accessToken;
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
+      // Known-offline: queue straight away rather than waiting on a fetch timeout.
+      if (!navigator.onLine) {
+        await queueAttendanceOffline(payload);
+        btn.disabled = false;
+        btn.textContent = '⚡ Submit Classroom Attendance (< 10s) →';
+        return;
+      }
 
       try {
         const res = await fetch('/api/v1/faculty/attendance/submit', {
           method: 'POST',
-          headers,
+          headers: authHeaders(true),
           body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
-        if (data.success && data.session) {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success && data.session) {
           showMarkingSuccess(data.session);
         } else {
           showMarkingError(data.message || data.error || 'Attendance submission failed.');
         }
       } catch (err) {
-        // Mock fallback confirmation
-        const mockSession = {
-          id: 'ses_' + Date.now(),
-          subjectCode: 'CS401',
-          subjectName: 'Data Structures & Algorithms',
-          division,
-          batch,
-          sessionDate: lectureDate,
-          sessionIndex,
-          totalStudents: currentCohort.length,
-          presentCount: currentCohort.length - absentStudentIds.size,
-          absentCount: absentStudentIds.size,
-          topicCovered,
-          canCorrect: true,
-          submittedAt: new Date().toISOString()
-        };
-        currentFacultySessions.unshift(mockSession);
-        showMarkingSuccess(mockSession);
+        // The request never reached the server (dropped Wi-Fi mid-submit): persist it
+        // to pending_submissions so nothing the teacher tapped is lost.
+        await queueAttendanceOffline(payload);
       } finally {
         btn.disabled = false;
         btn.textContent = '⚡ Submit Classroom Attendance (< 10s) →';
@@ -2597,32 +3261,389 @@
       loadFacultySessions();
     }
 
-    function renderDefaultersTable() {
+    /* ============================================================================
+       PAPERLESS OD / MEDICAL LEAVE
+       A student files one application with its proof attached; a teacher approves or
+       rejects it in one click. Approval credits the absences inside the window as
+       duty-present, so the percentage and the defaulter list move with the decision.
+       ============================================================================ */
+
+    const LEAVE_TYPE_LABELS = { OFFICIAL_DUTY: 'Official Duty', MEDICAL: 'Medical Leave' };
+    const LEAVE_STATUS_DOTS = { PENDING: 'dot-warn', APPROVED: 'dot-safe', REJECTED: 'dot-risk' };
+
+    /** Escapes text before it goes into innerHTML; event names and notes are free text. */
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function showLeaveBanner(elementId, message, tone) {
+      const banner = document.getElementById(elementId);
+      if (!banner) return;
+      const palette = {
+        ok: ['rgba(47, 158, 110, 0.15)', 'var(--state-safe)'],
+        error: ['rgba(214, 69, 69, 0.12)', 'var(--state-risk)']
+      };
+      const [background, colour] = palette[tone] || palette.ok;
+      banner.style.display = 'block';
+      banner.style.background = background;
+      banner.style.border = '1px solid ' + colour;
+      banner.style.color = colour;
+      banner.innerHTML = message;
+    }
+
+    function hideLeaveBanner(elementId) {
+      const banner = document.getElementById(elementId);
+      if (banner) banner.style.display = 'none';
+    }
+
+    /** A single-day leave is the common case, so the end date follows the start until it is changed. */
+    function syncLeaveToDate() {
+      const from = document.getElementById('leave-from-input');
+      const to = document.getElementById('leave-to-input');
+      if (from && to && (!to.value || to.value < from.value)) {
+        to.value = from.value;
+      }
+    }
+
+    async function submitLeaveRequest(event) {
+      if (event) event.preventDefault();
+      hideLeaveBanner('leave-feedback-banner');
+
+      const button = document.getElementById('leave-submit-btn');
+      const proofInput = document.getElementById('leave-proof-input');
+      const proof = proofInput && proofInput.files ? proofInput.files[0] : null;
+
+      if (!proof) {
+        showLeaveBanner('leave-feedback-banner',
+          '⚠️ <strong>Attach the proof.</strong> The event letter, invite or certificate is what replaces the paper.', 'error');
+        return;
+      }
+
+      const form = new FormData();
+      form.append('leaveType', document.getElementById('leave-type-select').value);
+      form.append('eventName', document.getElementById('leave-event-input').value.trim());
+      form.append('reason', document.getElementById('leave-reason-input').value.trim());
+      form.append('fromDate', document.getElementById('leave-from-input').value);
+      form.append('toDate', document.getElementById('leave-to-input').value);
+      form.append('proof', proof);
+
+      button.disabled = true;
+      button.textContent = '📤 Uploading proof…';
+
+      try {
+        // authHeaders(false) on purpose: the browser sets the multipart boundary itself.
+        const res = await fetch('/api/v1/leave/requests', {
+          method: 'POST',
+          headers: authHeaders(false),
+          body: form
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.success) {
+          showLeaveBanner('leave-feedback-banner',
+            '✅ <strong>Submitted.</strong> Your request is with the approving teacher — nothing to print or hand over.', 'ok');
+          document.getElementById('leave-submit-form').reset();
+          await loadMyLeaveRequests();
+        } else {
+          showLeaveBanner('leave-feedback-banner',
+            '⚠️ <strong>Not submitted:</strong> ' + escapeHtml(data.message || 'the request was rejected.'), 'error');
+        }
+      } catch (err) {
+        showLeaveBanner('leave-feedback-banner',
+          '⚠️ <strong>Could not reach the server.</strong> A leave request needs its proof uploaded, so it cannot be queued offline — try again once you are back online.', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = '📤 Submit for Approval';
+      }
+    }
+
+    /**
+     * Opens a stored proof. The endpoint is bearer-authenticated, so a plain link would be
+     * refused; the file is fetched with the session token and handed to the browser as a blob.
+     * Popup blockers get a download fallback rather than a dead button.
+     */
+    async function openLeaveProof(requestId, fileName) {
+      try {
+        const res = await fetch('/api/v1/leave/requests/' + encodeURIComponent(requestId) + '/proof', {
+          headers: authHeaders(false)
+        });
+        if (!res.ok) {
+          alert('Could not open the proof (' + res.status + ').');
+          return;
+        }
+
+        const blobUrl = URL.createObjectURL(await res.blob());
+        if (!window.open(blobUrl, '_blank', 'noopener')) {
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = fileName || 'proof';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        // Long enough for the new tab to have loaded it.
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (err) {
+        alert('Could not reach the server to open the proof.');
+      }
+    }
+
+    /**
+     * Renders the proof link. Attributes carry the ids and a delegated listener does the fetch,
+     * so nothing has to survive being quoted twice through a template literal and an attribute.
+     */
+    function proofLinkHtml(request, label) {
+      const name = request.proof.fileName;
+      return '<a href="#" class="leave-proof-link" data-request-id="' + escapeHtml(request.id) +
+        '" data-file-name="' + escapeHtml(name) + '">📎 ' +
+        escapeHtml(label ? label + ' (' + name + ')' : name) + '</a>';
+    }
+
+    // One delegated listener covers both the student list and the approval queue, including rows
+    // rendered after this ran.
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest && event.target.closest('.leave-proof-link');
+      if (!link) return;
+      event.preventDefault();
+      openLeaveProof(link.dataset.requestId, link.dataset.fileName);
+    });
+
+    async function loadMyLeaveRequests() {
+      const stack = document.getElementById('my-leave-stack');
+      if (!stack) return;
+      stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Loading your requests…</div></div>';
+
+      try {
+        const res = await fetch('/api/v1/leave/requests/mine', { headers: authHeaders(false) });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            escapeHtml(data.message || 'Could not load your requests.') + '</div></div>';
+          return;
+        }
+        if (!data.requests.length) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            'No leave requests yet. Submit one above and it goes straight to the approval queue.</div></div>';
+          return;
+        }
+
+        stack.innerHTML = data.requests.map(renderMyLeaveRow).join('');
+      } catch (err) {
+        stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Offline — reconnect to see your requests.</div></div>';
+      }
+    }
+
+    function renderMyLeaveRow(request) {
+      const detail = request.status === 'APPROVED'
+        ? request.sessionsAdjusted + ' lecture(s) credited as duty-present'
+        : (request.status === 'REJECTED'
+            ? 'Rejected: ' + (request.decisionNote || 'no reason given')
+            : 'Awaiting a decision');
+
+      return `
+        <div class="roll-call-row">
+          <div class="rc-date font-mono">${escapeHtml(request.fromDate)} → ${escapeHtml(request.toDate)}</div>
+          <div class="rc-subject">${escapeHtml(request.eventName)}</div>
+          <div class="rc-status">
+            <div class="status-dot ${LEAVE_STATUS_DOTS[request.status] || 'dot-warn'}"></div>
+            <span>${escapeHtml(request.status)}</span>
+          </div>
+          <div class="rc-detail">
+            ${escapeHtml(LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType)} • ${request.days} day(s) • ${escapeHtml(detail)}
+            ${request.proof ? ' • ' + proofLinkHtml(request) : ''}
+          </div>
+        </div>`;
+    }
+
+    // ----------------------------------------------------------- approval dashboard
+
+    async function loadLeaveApprovalQueue() {
+      const stack = document.getElementById('leave-approval-stack');
+      if (!stack) return;
+      const status = document.getElementById('leave-queue-status')?.value || 'PENDING';
+      stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Loading the queue…</div></div>';
+
+      try {
+        const res = await fetch('/api/v1/faculty/leave/requests?status=' + encodeURIComponent(status), {
+          headers: authHeaders(false)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">' +
+            escapeHtml(data.message || 'Could not load the approval queue.') + '</div></div>';
+          return;
+        }
+        if (!data.requests.length) {
+          stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Nothing in this queue.</div></div>';
+          return;
+        }
+
+        stack.innerHTML = data.requests.map(renderApprovalRow).join('');
+      } catch (err) {
+        stack.innerHTML = '<div class="roll-call-row"><div class="rc-detail">Offline — reconnect to review requests.</div></div>';
+      }
+    }
+
+    function renderApprovalRow(request) {
+      const pending = request.status === 'PENDING';
+      const proofLink = request.proof
+        ? proofLinkHtml(request, 'View proof')
+        : '<span style="color: var(--state-risk);">No proof attached</span>';
+
+      const decision = pending
+        ? `<div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem;">
+             <button class="btn btn-primary" style="font-size: 12px; padding: 0.35rem 0.8rem;"
+                     onclick="decideLeaveRequest('${escapeHtml(request.id)}', 'approve')">✅ Approve</button>
+             <button class="btn btn-secondary" style="font-size: 12px; padding: 0.35rem 0.8rem;"
+                     onclick="decideLeaveRequest('${escapeHtml(request.id)}', 'reject')">✖ Reject</button>
+           </div>`
+        : `<div style="margin-top: 0.4rem; color: var(--text-tertiary); font-size: 12px;">
+             ${escapeHtml(request.status)} by ${escapeHtml(request.decidedBy || 'unknown')}
+             ${request.status === 'APPROVED' ? ' • ' + request.sessionsAdjusted + ' lecture(s) credited' : ''}
+             ${request.decisionNote ? ' • ' + escapeHtml(request.decisionNote) : ''}
+           </div>`;
+
+      return `
+        <div class="roll-call-row" style="flex-wrap: wrap;">
+          <div class="rc-date font-mono">${escapeHtml(request.rollNo)}</div>
+          <div class="rc-subject">${escapeHtml(request.studentName)} — ${escapeHtml(request.eventName)}</div>
+          <div class="rc-status">
+            <div class="status-dot ${LEAVE_STATUS_DOTS[request.status] || 'dot-warn'}"></div>
+            <span>${escapeHtml(LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType)}</span>
+          </div>
+          <div class="rc-detail" style="flex-basis: 100%;">
+            ${escapeHtml(request.fromDate)} → ${escapeHtml(request.toDate)} (${request.days} day(s))
+            • ${escapeHtml(request.division || '')} • ${proofLink}
+            ${request.reason ? '<br>' + escapeHtml(request.reason) : ''}
+            ${decision}
+          </div>
+        </div>`;
+    }
+
+    /**
+     * The 1-click decision. A rejection needs a reason, so it is asked for here rather than
+     * letting the request bounce off the server-side validation.
+     */
+    async function decideLeaveRequest(requestId, action) {
+      hideLeaveBanner('leave-approval-banner');
+
+      let decisionNote = '';
+      if (action === 'reject') {
+        decisionNote = (prompt('Why is this being rejected? The student sees this.') || '').trim();
+        if (decisionNote.length < 10) {
+          showLeaveBanner('leave-approval-banner',
+            '⚠️ <strong>Rejection needs a reason</strong> of at least 10 characters.', 'error');
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch('/api/v1/faculty/leave/requests/' + encodeURIComponent(requestId) + '/' + action, {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify({ decisionNote })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          showLeaveBanner('leave-approval-banner',
+            '⚠️ <strong>Not saved:</strong> ' + escapeHtml(data.message || 'the decision was refused.'), 'error');
+          return;
+        }
+
+        showLeaveBanner('leave-approval-banner', decisionSummary(data), 'ok');
+        await loadLeaveApprovalQueue();
+
+        // The defaulter notice is derived from the same records, so it goes stale the moment a
+        // decision lands. Refresh it so the teacher never reads a pre-approval list.
+        renderDefaultersTable();
+      } catch (err) {
+        showLeaveBanner('leave-approval-banner',
+          '⚠️ <strong>Could not reach the server.</strong> The decision was not recorded.', 'error');
+      }
+    }
+
+    /** Spells out what the click did to the student numbers. */
+    function decisionSummary(data) {
+      const impact = data.attendanceImpact;
+      if (!impact) {
+        return '✅ <strong>Done.</strong> ' + escapeHtml(data.message || '');
+      }
+
+      const cleared = impact.clearedFromDefaulterList
+        ? ' <strong>Now off the defaulter list.</strong>'
+        : '';
+
+      return '✅ <strong>Approved.</strong> ' + impact.sessionsAdjusted +
+        ' lecture(s) credited as duty-present. Attendance ' + impact.percentageBefore + '% → ' +
+        impact.percentageAfter + '% over ' + impact.totalConducted + ' conducted.' + cleared;
+    }
+
+    /**
+     * Live defaulter notice, read straight from /api/v1/reports/defaulters. It is derived from
+     * the attendance records rather than stored, so approving an OD and re-running this is all
+     * the recalculation the list needs.
+     */
+    async function renderDefaultersTable() {
       const tbody = document.getElementById('defaulter-table-body');
       const dateEl = document.getElementById('defaulter-notice-date');
       if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
       if (!tbody) return;
 
-      const defaulters = [
-        { rollNo: '2024CS09', name: 'Bhoomit Fatnani', total: 45, attended: 31, pct: 68.8, shortfall: 3, status: 'DEFAULTER' },
-        { rollNo: '2024CS20', name: 'Parth Khismatrao', total: 45, attended: 32, pct: 71.1, shortfall: 2, status: 'DEFAULTER' },
-        { rollNo: '2024CS30', name: 'Vinay Motwani', total: 45, attended: 33, pct: 73.3, shortfall: 1, status: 'DEFAULTER' }
-      ];
+      const division = document.getElementById('defaulter-division-select')?.value || '';
+      const threshold = document.getElementById('defaulter-threshold-select')?.value || '75';
+      const kpi = document.getElementById('defaulter-kpi-count');
 
-      tbody.innerHTML = '';
-      defaulters.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="font-mono" style="font-weight: 700;">${d.rollNo}</td>
-          <td>${d.name}</td>
-          <td class="font-mono">${d.total}</td>
-          <td class="font-mono">${d.attended}</td>
-          <td class="font-mono" style="color: var(--state-risk); font-weight: 700;">${d.pct}%</td>
-          <td class="font-mono">${d.shortfall} Lectures</td>
-          <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">CRITICAL</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
+      tbody.innerHTML = '<tr><td colspan="8">Loading the notice…</td></tr>';
+
+      try {
+        const query = new URLSearchParams({ division, threshold });
+        const res = await fetch('/api/v1/reports/defaulters?' + query.toString(), { headers: authHeaders(false) });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          tbody.innerHTML = '<tr><td colspan="8">' +
+            escapeHtml(data.message || 'Could not generate the defaulter notice.') + '</td></tr>';
+          return;
+        }
+
+        if (kpi) kpi.textContent = data.defaulterCount;
+
+        if (!data.defaulters.length) {
+          tbody.innerHTML = '<tr><td colspan="8">No student in ' + escapeHtml(division || 'any division') +
+            ' is below ' + escapeHtml(threshold) + '%.</td></tr>';
+          return;
+        }
+
+        const limit = Number(threshold) / 100;
+        tbody.innerHTML = data.defaulters.map(row => defaulterRowHtml(row, limit)).join('');
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="8">Offline — reconnect to generate the notice.</td></tr>';
+      }
+    }
+
+    function defaulterRowHtml(row, limit) {
+      // Consecutive lectures still to attend to reach the threshold: ceil((limit*T - A) / (1 - limit)).
+      const shortfall = limit >= 1
+        ? 0
+        : Math.max(0, Math.ceil((limit * row.totalConducted - row.totalAttended) / (1 - limit)));
+      const critical = Number(row.overallPercentage) < 60;
+
+      return `
+        <tr>
+          <td class="font-mono" style="font-weight: 700;">${escapeHtml(row.rollNo)}</td>
+          <td>${escapeHtml(row.name)}</td>
+          <td class="font-mono">${row.totalConducted}</td>
+          <td class="font-mono">${row.totalAttended}</td>
+          <td class="font-mono">${row.totalDutyPresent}</td>
+          <td class="font-mono" style="color: var(--state-risk); font-weight: 700;">${row.overallPercentage}%</td>
+          <td class="font-mono">${shortfall} Lectures</td>
+          <td><span style="background: rgba(214, 69, 69, 0.15); color: var(--state-risk); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">${critical ? 'CRITICAL' : 'DEFAULTER'}</span></td>
+        </tr>`;
     }
 
     // --- Admin Roster Import Functions ---
@@ -2823,6 +3844,11 @@
         applyUserSession(data.session);
         document.getElementById('auth-modal').classList.add('hidden');
 
+        // Pull today's rosters into IndexedDB now, while the network is known good,
+        // and flush anything queued by a previous offline session.
+        precacheTodayRosters();
+        syncPendingSubmissions({ silent: true });
+
       } catch (err) {
         // Network fallback: handle local demo authentication if backend server is unreachable
         const cleanEmail = email.toLowerCase();
@@ -2913,6 +3939,8 @@
 
       currentUserSession = null;
       localStorage.removeItem('openattend_session');
+      // Queued submissions survive logout on purpose — they are unsent attendance.
+      clearCachedRosters();
 
       document.getElementById('user-profile-bar').style.display = 'none';
       document.getElementById('auth-email-input').value = '';
@@ -2923,6 +3951,14 @@
 
     // Auto-login check on page load
     window.addEventListener('DOMContentLoaded', () => {
+      // Registered on every load, restored session or not — this is what makes the
+      // shell launch with no connectivity at all.
+      registerServiceWorker();
+
+      window.addEventListener('online', handleConnectivityChange);
+      window.addEventListener('offline', handleConnectivityChange);
+      refreshOfflineQueueUi();
+
       const saved = localStorage.getItem('openattend_session');
       if (saved) {
         try {
@@ -2930,17 +3966,30 @@
           if (session && session.accessToken) {
             applyUserSession(session);
             document.getElementById('auth-modal').classList.add('hidden');
-            return;
+            // Refresh the offline roster cache and drain whatever the previous
+            // visit queued while it was disconnected.
+            precacheTodayRosters();
+            syncPendingSubmissions({ silent: true });
           }
         } catch (e) {}
       }
-      // Register PWA Service Worker
-      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-        navigator.serviceWorker.register('/sw.js').then(() => {
-          console.log('OpenAttend PWA Service Worker Registered');
-        }).catch(() => {});
-      }
     });
+
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return;
+
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('OpenAttend PWA Service Worker Registered'))
+        .catch(() => {});
+
+      // Background Sync fires inside the worker, but the queue and the bearer token
+      // live in the page, so the worker asks us to drain it.
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SYNC_PENDING_ATTENDANCE') {
+          syncPendingSubmissions({ silent: true });
+        }
+      });
+    }
   </script>
 
 </body>

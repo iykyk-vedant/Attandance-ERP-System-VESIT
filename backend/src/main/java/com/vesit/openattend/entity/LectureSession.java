@@ -85,6 +85,21 @@ public class LectureSession {
     @Column(name = "correction_reason", columnDefinition = "TEXT")
     private String correctionReason;
 
+    /** True when {@link #faculty} took this lecture as a substitute rather than as the allocated teacher. */
+    @Column(name = "is_proxy", nullable = false)
+    @Builder.Default
+    private Boolean isProxy = false;
+
+    /** The allocated subject teacher the lecture was delegated away from; null on a normal session. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "original_faculty_id")
+    private User originalFaculty;
+
+    /** The delegation that authorised the substitute, kept for the audit trail. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proxy_assignment_id")
+    private ProxyAssignment proxyAssignment;
+
     @OneToMany(mappedBy = "lectureSession", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<AttendanceRecord> attendanceRecords = new ArrayList<>();

@@ -1,6 +1,7 @@
 package com.vesit.openattend.controller;
 
 import com.vesit.openattend.dto.faculty.*;
+import com.vesit.openattend.security.CallerRoles;
 import com.vesit.openattend.service.faculty.FacultyAttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,7 @@ public class FacultyController {
             Authentication authentication
     ) {
         String email = authentication != null ? authentication.getName() : "faculty@ves.ac.in";
-        LectureSessionResponse session = facultyAttendanceService.submitAttendance(email, request);
+        LectureSessionResponse session = facultyAttendanceService.submitAttendance(email, CallerRoles.of(authentication), request);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Attendance recorded successfully",
@@ -63,7 +64,7 @@ public class FacultyController {
             Authentication authentication
     ) {
         String email = authentication != null ? authentication.getName() : "faculty@ves.ac.in";
-        LectureSessionResponse session = facultyAttendanceService.correctAttendance(email, sessionId, request);
+        LectureSessionResponse session = facultyAttendanceService.correctAttendance(email, CallerRoles.of(authentication), sessionId, request);
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Attendance corrected successfully",

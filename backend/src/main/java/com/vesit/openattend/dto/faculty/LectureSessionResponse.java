@@ -32,4 +32,11 @@ public class LectureSessionResponse {
     private String lastModifiedAt;
     private boolean canCorrect;
     private String correctionReason;
+
+    /** Proxy audit trail: who took the lecture, whether as a substitute, and for whom. */
+    private String takenByFacultyEmail;
+    private boolean proxy;
+    private String originalFacultyEmail;
+    private String proxyAssignmentId;
+    private String proxyReason;
 }
