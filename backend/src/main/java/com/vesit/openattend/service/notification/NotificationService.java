@@ -36,14 +36,10 @@ public class NotificationService {
         List<NotificationDto> dtoList = new ArrayList<>();
 
         for (Notification n : entities) {
-            String title = "threshold_breach".equalsIgnoreCase(n.getType())
-                    ? "Attendance Threshold Warning"
-                    : "Automated Sync Completed";
-
             dtoList.add(NotificationDto.builder()
                     .id(n.getId())
                     .type(n.getType())
-                    .title(title)
+                    .title(titleFor(n.getType()))
                     .message(n.getMessage())
                     .date(n.getCreatedAt() != null ? n.getCreatedAt().toString() : "")
                     .read(Boolean.TRUE.equals(n.getIsRead()))
@@ -131,6 +127,18 @@ public class NotificationService {
                 .build();
 
         return notificationRepository.save(notification);
+    }
+
+    private static String titleFor(String type) {
+        if (type == null) {
+            return "Automated Sync Completed";
+        }
+        return switch (type.toLowerCase(Locale.ROOT)) {
+            case "threshold_breach" -> "Attendance Threshold Warning";
+            case "threshold_critical" -> "Critical Attendance Alert";
+            case "leave_decision" -> "Leave Request Update";
+            default -> "Automated Sync Completed";
+        };
     }
 
     private Student resolveStudent(String rollNo) {

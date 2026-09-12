@@ -9,6 +9,8 @@ import com.vesit.openattend.exception.MarkingNotAuthorizedException;
 import com.vesit.openattend.repository.*;
 import com.vesit.openattend.service.attendance.ProxyDelegationService;
 import com.vesit.openattend.service.leave.DutyAttendanceAdjuster;
+import com.vesit.openattend.service.notification.DefaulterAlertService;
+import com.vesit.openattend.service.notification.DefaulterAlertService.MarkedAbsence;
 import com.vesit.openattend.service.sync.SyncDiffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ public class FacultyAttendanceService {
     private final FacultySubjectAllocationRepository allocationRepository;
     private final ProxyDelegationService proxyDelegationService;
     private final DutyAttendanceAdjuster dutyAttendanceAdjuster;
+    private final DefaulterAlertService defaulterAlertService;
 
     @Transactional(readOnly = true)
     public List<FacultySubjectDto> getMySubjects(String facultyEmail) {
@@ -241,6 +244,8 @@ public class FacultyAttendanceService {
                     authorization.originalFaculty() != null ? authorization.originalFaculty().getEmail() : "unknown");
         }
 
+        List<MarkedAbsence> newAbsences = new ArrayList<>();
+
         // Upsert AttendanceRecord for every student in the cohort
         for (Student student : roster) {
             AttendanceStatus status = resolveMarkedStatus(student.getId(), absentSet, onApprovedLeave);
@@ -251,8 +256,10 @@ public class FacultyAttendanceService {
                     );
 
             AttendanceRecord record;
+            AttendanceStatus previousStatus = null;
             if (existingRec.isPresent()) {
                 record = existingRec.get();
+                previousStatus = record.getStatus();
                 record.setStatus(status);
                 record.setLectureSession(session);
                 record.setFaculty(faculty.getEmail());
@@ -281,7 +288,14 @@ public class FacultyAttendanceService {
                     .modifiedBy(faculty.getEmail())
                     .build();
             attendanceHistoryEventRepository.save(event);
+
+            if (status == AttendanceStatus.ABSENT && previousStatus != AttendanceStatus.ABSENT) {
+                newAbsences.add(new MarkedAbsence(student, previousStatus));
+            }
         }
+
+        // Warns anyone this roll call took below 75% / 65%; the email follows once this commits.
+        defaulterAlertService.onAbsencesMarked(session, newAbsences);
 
         // Only the genuinely absent are reported back: a duty-present student was marked absent by
         // the teacher but is not absent for attendance purposes, and the correction modal prefills
@@ -406,6 +420,7 @@ public class FacultyAttendanceService {
                 records.stream().map(rec -> rec.getStudent().getId()).toList(), session.getSessionDate());
 
         int absentCount = 0;
+        List<MarkedAbsence> newAbsences = new ArrayList<>();
         for (AttendanceRecord rec : records) {
             AttendanceStatus oldStatus = rec.getStatus();
             AttendanceStatus newStatus = resolveMarkedStatus(rec.getStudent().getId(), newAbsentSet, onApprovedLeave);
@@ -431,8 +446,15 @@ public class FacultyAttendanceService {
                         .mandatoryReason(reason)
                         .build();
                 attendanceHistoryEventRepository.save(event);
+
+                if (newStatus == AttendanceStatus.ABSENT) {
+                    newAbsences.add(new MarkedAbsence(rec.getStudent(), oldStatus));
+                }
             }
         }
+
+        // A correction that marks someone absent can take them below the line just as a submission can.
+        defaulterAlertService.onAbsencesMarked(session, newAbsences);
 
         session.setAbsentCount(absentCount);
         session.setPresentCount(session.getTotalStudents() - absentCount);

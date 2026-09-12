@@ -1,5 +1,6 @@
 package com.vesit.openattend.repository;
 
+import com.vesit.openattend.dto.notification.StudentSubjectTally;
 import com.vesit.openattend.dto.report.DefaulterAggregateRow;
 import com.vesit.openattend.entity.AttendanceRecord;
 import com.vesit.openattend.entity.enums.AttendanceStatus;
@@ -75,5 +76,31 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     default List<DefaulterAggregateRow> aggregateDefaulterRows(String division, LocalDate startDate, LocalDate endDate) {
         return aggregateDefaulterRows(division, startDate, endDate,
                 AttendanceStatus.attended(), AttendanceStatus.conducted(), AttendanceStatus.DUTY_PRESENT);
+    }
+
+    /**
+     * Per-subject conducted/attended counts for a set of students in one grouped pass — what the
+     * defaulter alert check reads after a roll call, rather than loading every record per absentee.
+     *
+     * <p>Prefer {@link #tallyByStudentAndSubject(Collection)}, which supplies the status sets.
+     */
+    @Query("""
+            SELECT new com.vesit.openattend.dto.notification.StudentSubjectTally(
+                       ar.student.id, ar.subject.id,
+                       SUM(CASE WHEN ar.status IN :conductedStatuses THEN 1L ELSE 0L END),
+                       SUM(CASE WHEN ar.status IN :attendedStatuses THEN 1L ELSE 0L END))
+              FROM AttendanceRecord ar
+             WHERE ar.student.id IN :studentIds
+             GROUP BY ar.student.id, ar.subject.id
+            """)
+    List<StudentSubjectTally> tallyByStudentAndSubject(
+            @Param("studentIds") Collection<String> studentIds,
+            @Param("attendedStatuses") Collection<AttendanceStatus> attendedStatuses,
+            @Param("conductedStatuses") Collection<AttendanceStatus> conductedStatuses
+    );
+
+    /** Counts by the rule on {@link AttendanceStatus}: OD counts as attended, NA counts as nothing. */
+    default List<StudentSubjectTally> tallyByStudentAndSubject(Collection<String> studentIds) {
+        return tallyByStudentAndSubject(studentIds, AttendanceStatus.attended(), AttendanceStatus.conducted());
     }
 }
