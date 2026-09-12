@@ -17,4 +17,11 @@ public class FacultySubjectDto {
     private String batch;
     private int totalStudents;
     private String lastSessionDate;
+
+    /** Set when the entry is a lecture delegated to this faculty as a substitute. */
+    private boolean proxy;
+    private String proxyAssignmentId;
+    private String proxyForFacultyEmail;
+    private Integer proxySessionIndex;
+    private String proxyReason;
 }

@@ -26,6 +26,10 @@ management:
 
 openattend:
   allowed-email-domain: ves.ac.in
+  notifications:
+    email:
+      enabled: false
+      from: OpenAttend <no-reply@ves.ac.in>
   jwt:
     secret: test_jwt_secret_key_needs_to_be_at_least_32_bytes_long
     access-expiry-ms: 900000

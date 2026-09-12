@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Ahead of the Spring Boot parent default: annotation processing fails on JDK 24 below 1.18.38. -->
+        <lombok.version>1.18.42</lombok.version>
         <jjwt.version>0.12.6</jjwt.version>
         <poi.version>5.2.5</poi.version>
     </properties>
@@ -44,6 +46,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Institutional defaulter warning emails (Issue #11) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <!-- Database & Migrations -->

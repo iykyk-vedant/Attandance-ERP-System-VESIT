@@ -1,5 +1,6 @@
 package com.vesit.openattend.entity;
 
+import com.vesit.openattend.entity.enums.NotificationEmailStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -47,6 +48,14 @@ public class Notification {
 
     @Column(name = "sync_log_id", length = 36)
     private String syncLogId;
+
+    /** Delivery of the email copy; null for notification types that are in-app only. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "email_status", length = 16)
+    private NotificationEmailStatus emailStatus;
+
+    @Column(name = "emailed_at")
+    private LocalDateTime emailedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
