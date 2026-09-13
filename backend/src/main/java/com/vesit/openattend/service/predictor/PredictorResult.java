@@ -25,4 +25,9 @@ public class PredictorResult {
     private Double maxPossiblePct;
     private Integer honorSafeSkips;
     private Integer honorMustAttend;
+
+    /** {@link #pct} under the name the predictor contract uses: {@code currentPercentage}. */
+    public double getCurrentPercentage() {
+        return pct;
+    }
 }

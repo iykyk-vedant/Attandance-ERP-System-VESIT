@@ -145,11 +145,10 @@ public class DefaulterAlertService {
             return;
         }
 
-        // Only reached below 75%, where at least one lecture is always needed; the floor guards the
-        // predictor's one-decimal rounding of a percentage just under the line.
-        int lecturesToRecover = Math.max(1, predictorService
+        // Only reached below 75%, where the predictor's exact arithmetic always asks for at least one lecture.
+        int lecturesToRecover = predictorService
                 .calculate(after.attended(), after.conducted(), PredictorService.DEFAULT_THRESHOLD, null)
-                .getMustAttend());
+                .getMustAttend();
 
         Subject missed = session.getSubject();
         Notification notification = notificationRepository.save(Notification.builder()
