@@ -64,7 +64,19 @@ OpenAttend requires **read-only** access to poll attendance Google Sheets.
    # Sync & Application
    SYNC_DEFAULT_CRON="0 */15 * * * *"
    PORT=3000
+
+   # Defaulter warning emails (optional — alerts are always shown in-app)
+   NOTIFICATION_EMAIL_ENABLED=true
+   NOTIFICATION_EMAIL_FROM="OpenAttend <no-reply@ves.ac.in>"
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT=587
+   SMTP_USERNAME="attendance-bot@ves.ac.in"
+   SMTP_PASSWORD="app-password"
    ```
+   When email is enabled, a student gets one email the moment a submitted or corrected lecture takes a subject
+   (or their overall attendance) below 75%, at most once a week per subject. Dropping below 65% sends a critical
+   alert regardless of that cooldown. Delivery is recorded per notification in `notifications.email_status`
+   (`PENDING`, `SENT`, `FAILED`, `SKIPPED`).
 
 ---
 

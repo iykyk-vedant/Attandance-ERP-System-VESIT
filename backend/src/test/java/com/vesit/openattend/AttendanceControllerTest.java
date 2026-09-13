@@ -26,7 +26,10 @@ public class AttendanceControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.overallPct").exists())
                 .andExpect(jsonPath("$.predictor").exists())
-                .andExpect(jsonPath("$.predictor.status").exists());
+                .andExpect(jsonPath("$.predictor.status").exists())
+                .andExpect(jsonPath("$.predictor.currentPercentage").isNumber())
+                .andExpect(jsonPath("$.predictor.safeSkips").isNumber())
+                .andExpect(jsonPath("$.predictor.mustAttend").isNumber());
     }
 
     @Test
