@@ -8,8 +8,10 @@ import com.vesit.openattend.repository.*;
 import com.vesit.openattend.service.sync.SyncDiffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -200,6 +202,8 @@ public class FacultyAttendanceService {
                     .attendanceRecord(record)
                     .previousStatus(null)
                     .newStatus(status)
+                    .modifiedBy(facultyEmail)
+                    .mandatoryReason("Initial attendance submission")
                     .build();
             attendanceHistoryEventRepository.save(event);
         }
@@ -212,10 +216,22 @@ public class FacultyAttendanceService {
         LectureSession session = lectureSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found: " + sessionId));
 
-        // 48-Hour correction window check
+        User actor = userRepository.findByEmail(facultyEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Authenticated faculty user not found"));
+
+        // Faculty may correct only within 48 hours. Class teachers and admins can unlock
+        // the session after the window has expired.
         LocalDateTime deadline = session.getSubmittedAt().plusHours(48);
-        if (LocalDateTime.now().isAfter(deadline)) {
-            throw new IllegalStateException("48-Hour correction window has expired for this lecture session. Please contact the administrator.");
+        boolean withinCorrectionWindow = !LocalDateTime.now().isAfter(deadline);
+        boolean canUnlock = actor.getRole() == Role.CLASS_TEACHER
+                || actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.SUPER_ADMIN;
+
+        if (!withinCorrectionWindow && !canUnlock) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "48-Hour correction window has expired. Only class teachers or administrators can unlock this session."
+            );
         }
 
         // Justification reason validation (>= 10 characters)
@@ -248,6 +264,8 @@ public class FacultyAttendanceService {
                         .attendanceRecord(rec)
                         .previousStatus(oldStatus)
                         .newStatus(newStatus)
+                        .modifiedBy(facultyEmail)
+                        .mandatoryReason(request.getCorrectionReason().trim())
                         .build();
                 attendanceHistoryEventRepository.save(event);
             }

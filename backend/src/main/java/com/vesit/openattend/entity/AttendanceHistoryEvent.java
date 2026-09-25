@@ -36,6 +36,12 @@ public class AttendanceHistoryEvent {
     @Column(name = "changed_at", nullable = false, updatable = false)
     private LocalDateTime changedAt;
 
+    @Column(name = "modified_by", nullable = false, length = 255, updatable = false)
+    private String modifiedBy;
+
+    @Column(name = "mandatory_reason", nullable = false, length = 1000, updatable = false)
+    private String mandatoryReason;
+
     @Column(name = "sync_log_id", length = 36)
     private String syncLogId;
 }
